@@ -11,6 +11,7 @@ import { CATEGORY_LABEL } from "@/i18n/messages";
 import { hasRole, requireFamily } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { isoDaysFromNow, todayIso } from "@/lib/dates";
 import { markMaintained } from "@/modules/inventory/actions";
 import { CONDITION_LABEL, InventoryDialog } from "@/modules/inventory/inventory-form";
 import { loadPreparedness } from "@/modules/preparedness/load";
@@ -45,8 +46,8 @@ export default async function InventoryPage({ searchParams }: PageProps<"/app/in
     supabase.from("inventory_items").select("*").eq("family_id", ctx.family.id).order("category").order("name"),
   ]);
   const canUpdate = hasRole(ctx.role, "member");
-  const today = new Date().toISOString().slice(0, 10);
-  const soon = new Date(Date.now() + EXPIRY_WARNING_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const today = todayIso();
+  const soon = isoDaysFromNow(EXPIRY_WARNING_DAYS);
 
   // Unified view: kit stock is shown here but edited where it lives (single source of truth).
   const kitRows: Row[] = [

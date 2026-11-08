@@ -82,7 +82,8 @@ const healthSchema = z.object({
   consent: z.literal("on", { error: "É necessário o consentimento explícito para guardar dados de saúde." }),
 });
 
-export const saveHealth = familyAction("editor", healthSchema, async ({ consent: _c, ...input }, ctx) => {
+export const saveHealth = familyAction("editor", healthSchema, async ({ member_profile_id, allergies, medication, health_needs, include_on_card }, ctx) => {
+  const input = { member_profile_id, allergies, medication, health_needs, include_on_card };
   const supabase = await createClient();
   const { data: existing } = await supabase.from("member_health").select("member_profile_id").eq("member_profile_id", input.member_profile_id).maybeSingle();
   if (!input.allergies && !input.medication && !input.health_needs) {

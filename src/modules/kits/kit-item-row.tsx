@@ -2,7 +2,7 @@
 
 import { Check, CircleCheck, Loader2, PackageCheck, Pencil, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { PriorityBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,13 @@ export function KitItemRow({
   const [pending, start] = useTransition();
   const [queued, setQueued] = useState(false);
 
-  useEffect(() => setLocal({ have: line.have, isPacked: line.isPacked, acquiredVia: line.acquiredVia }), [line.have, line.isPacked, line.acquiredVia]);
+  // Reset local optimistic state whenever the server values change (realtime refresh).
+  const serverKey = `${line.have}|${line.isPacked}|${line.acquiredVia}`;
+  const [syncedKey, setSyncedKey] = useState(serverKey);
+  if (syncedKey !== serverKey) {
+    setSyncedKey(serverKey);
+    setLocal({ have: line.have, isPacked: line.isPacked, acquiredVia: line.acquiredVia });
+  }
 
   const missing = line.excluded ? 0 : Math.max(0, Math.round((line.required - local.have) * 100) / 100);
   const complete = line.excluded || (kind === "bag" ? local.isPacked : missing <= 0);

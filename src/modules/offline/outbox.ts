@@ -59,7 +59,7 @@ async function post(ops: OutboxOp[]): Promise<SyncResponse> {
     method: "POST",
     headers: { "content-type": "application/json" },
     credentials: "same-origin",
-    body: JSON.stringify({ ops: ops.map(({ queuedAt: _q, ...o }) => o) }),
+    body: JSON.stringify({ ops: ops.map((o) => ({ opId: o.opId, kind: o.kind, familyId: o.familyId, bagId: o.bagId, key: o.key, rowId: o.rowId, patch: o.patch })) }),
   });
   if (!res.ok) throw new Error(`sync_http_${res.status}`);
   const body = (await res.json()) as SyncResponse;

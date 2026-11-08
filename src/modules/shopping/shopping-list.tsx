@@ -80,12 +80,12 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
             <button key={f.key} role="tab" aria-selected={filter === f.key} onClick={() => setFilter(f.key)} className={cn("rounded-full px-3 py-1 text-sm", filter === f.key ? "bg-brand-700 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50")}>{f.label}</button>
           ))}
         </div>
-        <div className="ml-auto flex gap-2">
-          <Select aria-label="Origem" value={source} onChange={(e) => setSource(e.target.value as typeof source)} className="h-9 w-40">
+        <div className="flex w-full gap-2 sm:ml-auto sm:w-auto">
+          <Select aria-label="Origem" value={source} onChange={(e) => setSource(e.target.value as typeof source)} className="h-9 min-w-0 flex-1 sm:w-40 sm:flex-none">
             <option value="all">Todas as origens</option><option value="home">HOME KIT</option><option value="bag">GO BAGS</option><option value="manual">Manuais</option><option value="energy">Energia</option>
           </Select>
-          <label className="flex items-center gap-1 text-sm text-slate-500"><ArrowUpDown className="size-4" aria-hidden /><span className="sr-only">Ordenar por</span>
-            <Select value={sort} onChange={(e) => setSort(e.target.value as keyof typeof SORTS)} className="h-9 w-36">{Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
+          <label className="flex min-w-0 flex-1 items-center gap-1 text-sm text-slate-500 sm:flex-none"><ArrowUpDown className="size-4" aria-hidden /><span className="sr-only">Ordenar por</span>
+            <Select value={sort} onChange={(e) => setSort(e.target.value as keyof typeof SORTS)} className="h-9 min-w-0 flex-1 sm:w-36">{Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           </label>
         </div>
       </div>

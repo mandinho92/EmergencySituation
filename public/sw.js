@@ -94,7 +94,7 @@ self.addEventListener("message", (event) => {
             /* ignore single failures */
           }
         }
-        event.source && event.source.postMessage({ type: "PRECACHE_DONE", ok, total: data.urls.length });
+        if (event.source) event.source.postMessage({ type: "PRECACHE_DONE", ok, total: data.urls.length });
       })(),
     );
   }

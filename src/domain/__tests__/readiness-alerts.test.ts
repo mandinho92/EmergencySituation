@@ -73,6 +73,8 @@ describe("computeReadiness", () => {
   it("marks energy as configured but not acquired", () => {
     const r = computeReadiness(baseInput({ energy: { tier: "balanced", stationAcquired: false, hasStationSelected: true } }));
     expect(r.indicators.energyStatus).toBe("configured_not_acquired");
+    const chosen = computeReadiness(baseInput({ energy: { tier: "balanced", stationAcquired: false, hasStationSelected: false } }));
+    expect(chosen.indicators.energyStatus).toBe("tier_chosen");
   });
 
   it("counts a bag as ready only when every P0/P1 item is packed", () => {

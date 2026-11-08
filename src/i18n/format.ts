@@ -23,3 +23,8 @@ export function formatDateTime(iso: string | null | undefined, locale: Locale = 
 export function formatWeight(grams: number, locale: Locale = DEFAULT_LOCALE): string {
   return grams >= 1000 ? `${formatNumber(grams / 1000, locale, 1)} kg` : `${Math.round(grams)} g`;
 }
+
+/** "1 ano" / "3 anos". */
+export function formatAge(years: number): string {
+  return `${years} ${years === 1 ? "ano" : "anos"}`;
+}

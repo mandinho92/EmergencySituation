@@ -65,7 +65,7 @@ export interface ReadinessResult {
     foodDays: number | null;
     bagsReady: number;
     bagsTotal: number;
-    energyStatus: "not_decided" | "not_wanted" | "configured_not_acquired" | "acquired" | "basic_only";
+    energyStatus: "not_decided" | "not_wanted" | "tier_chosen" | "configured_not_acquired" | "acquired" | "basic_only";
     essentialMissing: number;
   };
   actions: PriorityAction[];
@@ -138,7 +138,7 @@ export function computeReadiness(input: ReadinessInput): ReadinessResult {
   const energyStatus: ReadinessResult["indicators"]["energyStatus"] =
     input.energy.tier === "undecided" ? "not_decided"
       : input.energy.tier === "none" ? "not_wanted"
-      : wantsStation ? (input.energy.stationAcquired ? "acquired" : "configured_not_acquired")
+      : wantsStation ? (input.energy.stationAcquired ? "acquired" : input.energy.hasStationSelected ? "configured_not_acquired" : "tier_chosen")
       : "basic_only";
 
   return {
@@ -162,7 +162,7 @@ export function computeReadiness(input: ReadinessInput): ReadinessResult {
       energyStatus,
       essentialMissing,
     },
-    actions: buildActions(input, { bagsReady }),
+    actions: buildActions(input),
   };
 }
 
@@ -170,7 +170,7 @@ function fmtQty(n: number) {
   return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ",");
 }
 
-function buildActions(input: ReadinessInput, ctx: { bagsReady: number }): PriorityAction[] {
+function buildActions(input: ReadinessInput): PriorityAction[] {
   const actions: PriorityAction[] = [];
   if (input.memberCount === 0) {
     actions.push({ key: "members", title: "Adicionar os membros do agregado", detail: "Os cálculos dependem da composição da família.", href: "/app/members", rank: 0 });

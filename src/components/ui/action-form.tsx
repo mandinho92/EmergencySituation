@@ -62,10 +62,13 @@ export function ActionForm({
     let result: ActionResult<unknown>;
     try {
       result = await action({ ...formDataToObject(fd), ...extra });
-    } catch {
+    } catch (e) {
+      // A redirect from the action surfaces as a navigation, not as an error to report.
+      if (e && typeof e === "object" && "digest" in e && String((e as { digest: unknown }).digest).startsWith("NEXT_REDIRECT")) throw e;
       toast.error("Não foi possível contactar o servidor.");
       return;
     }
+    if (!result) return; // action redirected
     if (result.ok) {
       setErrors({});
       const msg = result.message ?? successMessage;
@@ -135,13 +138,15 @@ export function ActionButton({
         start(async () => {
           try {
             const r = await action(input);
+            if (!r) return; // action redirected
             if (r.ok) {
               const msg = r.message ?? successMessage;
               if (msg) toast.success(msg);
               router.refresh();
             } else toast.error(r.error);
             onDone?.(r);
-          } catch {
+          } catch (e) {
+            if (e && typeof e === "object" && "digest" in e && String((e as { digest: unknown }).digest).startsWith("NEXT_REDIRECT")) throw e;
             toast.error("Não foi possível contactar o servidor.");
           }
         });

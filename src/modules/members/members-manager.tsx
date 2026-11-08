@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormDialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/misc";
+import { formatAge } from "@/i18n/format";
 import { MEMBER_CATEGORY_LABEL, PET_SPECIES_LABEL } from "@/i18n/messages";
 import type { MemberRow, PetRow } from "@/modules/preparedness/load";
 import { applyPreset, deleteMember, deletePet } from "./actions";
@@ -54,7 +55,7 @@ export function MembersManager({ members, pets, health, canEdit, canSeeHealth }:
                     <div className="min-w-0">
                       <p className="truncate font-medium">{m.display_name}</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        <Badge tone="brand">{MEMBER_CATEGORY_LABEL[m.category]}{m.age_years != null ? ` · ${m.age_years} anos` : ""}</Badge>
+                        <Badge tone="brand">{MEMBER_CATEGORY_LABEL[m.category]}{m.age_years != null ? ` · ${formatAge(m.age_years)}` : ""}</Badge>
                         {m.reduced_mobility && <Badge tone="warning"><Accessibility aria-hidden /> Mobilidade reduzida</Badge>}
                         {m.uses_diapers && <Badge>Fraldas</Badge>}
                         {m.dietary_needs && <Badge>Dieta: {m.dietary_needs}</Badge>}

@@ -17,6 +17,7 @@ export const metadata: Metadata = { title: "Painel" };
 const ENERGY_STATUS = {
   not_decided: "Por decidir (opcional)",
   not_wanted: "Sem bateria — só o básico",
+  tier_chosen: "Nível escolhido, produto por selecionar",
   configured_not_acquired: "Solução configurada, ainda não adquirida",
   acquired: "Solução adquirida",
   basic_only: "Powerbanks e iluminação",
@@ -25,9 +26,10 @@ const ENERGY_STATUS = {
 export default async function DashboardPage({ searchParams }: PageProps<"/app">) {
   const ctx = await requireFamily();
   const sp = await searchParams;
-  if (!ctx.family.onboarding_completed_at && hasRole(ctx.role, "editor") && !sp.skip && !sp.welcome && !sp.joined) redirect("/onboarding?step=members");
-
   const { data, readiness, alerts, tasks } = await loadDashboard(ctx.family.id);
+  // First visit of a brand-new family goes to onboarding; afterwards the user may skip it freely.
+  if (!ctx.family.onboarding_completed_at && data.members.length === 0 && hasRole(ctx.role, "editor") && !sp.skip) redirect("/onboarding?step=members");
+  const onboardingPending = !ctx.family.onboarding_completed_at && hasRole(ctx.role, "editor");
   const { scores, indicators, actions } = readiness;
   const firstName = ctx.profile.full_name.split(/\s+/)[0];
 
@@ -47,6 +49,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
     <>
       <PageHeader title={`Olá, ${firstName}`} description={`Preparação da ${ctx.family.name} para ${data.settings.targetDays === 1 ? "24 horas" : `${data.settings.targetDays} dias`} em casa e 72 horas em evacuação.`} />
       {sp.error === "permission" && <Notice tone="warning" className="mb-4">A sua permissão nesta família não permite abrir essa página.</Notice>}
+      {onboardingPending && !sp.welcome && (
+        <Notice className="mb-4" title="Configuração por completar">
+          Pode continuar a configuração (habitação, autonomia e orçamento) quando quiser. <Link href="/onboarding?step=household">Continuar configuração</Link>
+        </Notice>
+      )}
       {sp.joined && <Notice tone="success" className="mb-4">Entrou na família {ctx.family.name}. Todas as alterações são partilhadas em tempo real.</Notice>}
 
       <div className="grid gap-4 lg:grid-cols-3">
