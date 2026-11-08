@@ -1,26 +1,55 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * FamilyReady design tokens.
+ * Navy for structure and primary actions, slate neutrals, green for
+ * "ready/complete", amber for "attention", red only for genuine problems.
+ */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-brand-50: #eef3f9;
+  --color-brand-100: #d9e4f1;
+  --color-brand-200: #b3c8e2;
+  --color-brand-500: #3a6ea5;
+  --color-brand-600: #2a5785;
+  --color-brand-700: #1e3a5f;
+  --color-brand-800: #172e4b;
+  --color-brand-900: #0f2038;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-ready-50: #ecfdf3;
+  --color-ready-100: #d1fadf;
+  --color-ready-500: #12b76a;
+  --color-ready-600: #039855;
+  --color-ready-700: #027a48;
+
+  --radius-card: 0.875rem;
+  --shadow-card: 0 1px 2px 0 rgb(15 32 56 / 0.04), 0 1px 3px 0 rgb(15 32 56 / 0.06);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: none; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
+  ::selection { @apply bg-brand-100; }
+}
+
+/* Leaflet map container needs explicit size. */
+.leaflet-container { @apply h-full w-full rounded-lg; font: inherit; }
+
+@media print {
+  @page { margin: 14mm; }
+  body { @apply bg-white text-black; }
+  .no-print { display: none !important; }
+  .print-break { break-before: page; }
+  a { text-decoration: none; color: inherit; }
 }
