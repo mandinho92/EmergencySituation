@@ -14,6 +14,7 @@ import { formatDate, formatWeight } from "@/i18n/format";
 import { hasRole, requireFamily } from "@/lib/session";
 import { createChildBag, createSuggestedBags } from "@/modules/go-bags/actions";
 import { loadPreparedness } from "@/modules/preparedness/load";
+import { KitTabs } from "@/components/layout/kit-tabs";
 
 export const metadata: Metadata = { title: "GO BAGS" };
 
@@ -28,6 +29,7 @@ export default async function GoBagsPage() {
 
   return (
     <>
+      <KitTabs active="bags" />
       <PageHeader icon={Backpack} title="GO BAGS" description="Mochilas de evacuação imediata para cerca de 72 horas fora de casa. Independentes do HOME KIT." />
       <Notice className="mb-4">Uma mochila por adulto. Bebés e crianças pequenas têm os seus artigos na mochila do adulto responsável. Crianças a partir dos 6 anos podem levar uma mochila leve.</Notice>
 

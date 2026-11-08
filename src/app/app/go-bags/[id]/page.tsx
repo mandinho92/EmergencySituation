@@ -3,9 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionButton } from "@/components/ui/action-form";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Notice, PageHeader, Stat } from "@/components/ui/misc";
 import { ProgressBar } from "@/components/ui/progress";
 import { weightedCoverage } from "@/domain/preparedness/kit-lines";
@@ -14,7 +12,9 @@ import { BAG_CATEGORIES, CATEGORY_LABEL } from "@/i18n/messages";
 import { hasRole, requireFamily } from "@/lib/session";
 import { deleteBag, markBagChecked } from "@/modules/go-bags/actions";
 import { AddBagItem, BagItemEditDialog, BagSettingsDialog } from "@/modules/go-bags/forms";
+import { CategoryChips, CategorySection } from "@/modules/kits/category-section";
 import { KitItemRow } from "@/modules/kits/kit-item-row";
+import { KitList } from "@/modules/kits/kit-list";
 import { toViews } from "@/modules/kits/view";
 import { loadPreparedness } from "@/modules/preparedness/load";
 
@@ -33,6 +33,7 @@ export default async function BagPage({ params }: PageProps<"/app/go-bags/[id]">
   const coverage = Math.round(weightedCoverage(lines, "bag") * 100);
   const packed = lines.filter((l) => !l.excluded && l.isPacked).length;
   const active = lines.filter((l) => !l.excluded).length;
+  const categories = BAG_CATEGORIES.map((cat) => ({ cat, lines: lines.filter((l) => l.category === cat) })).filter((c) => c.lines.length > 0);
 
   return (
     <>
@@ -58,25 +59,20 @@ export default async function BagPage({ params }: PageProps<"/app/go-bags/[id]">
       </div>
       {weight.overLimit && <Notice tone="warning" className="mt-4">O peso estimado ultrapassa o limite de planeamento para {owner?.displayName ?? "esta pessoa"}. Distribua artigos por outras mochilas ou reduza quantidades.</Notice>}
 
-      <div className="mt-4 space-y-4">
-        {BAG_CATEGORIES.map((cat) => {
-          const catLines = lines.filter((l) => l.category === cat);
-          if (catLines.length === 0) return null;
-          const catPacked = catLines.filter((l) => l.excluded || l.isPacked).length;
-          return (
-            <Card key={cat}>
-              <CardHeader><CardTitle>{CATEGORY_LABEL[cat]}</CardTitle><Badge tone={catPacked === catLines.length ? "ready" : "neutral"}>{catPacked}/{catLines.length}</Badge></CardHeader>
-              <CardContent>
-                <ul className="divide-y divide-slate-100">
-                  {catLines.map((l) => {
-                    const v = byId.get(l.id)!;
-                    return <KitItemRow key={l.id} line={v} kind="bag" familyId={ctx.family.id} bagId={bag.id} canUpdate={hasRole(ctx.role, "member")} editSlot={canEdit ? <BagItemEditDialog bagId={bag.id} line={v} computedRequired={l.computedRequired} /> : undefined} />;
-                  })}
-                </ul>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="mt-4">
+        <CategoryChips items={categories.map((c) => ({ id: `bag-${c.cat}`, label: CATEGORY_LABEL[c.cat], missing: c.lines.filter((l) => !l.excluded && !l.isPacked).length }))} />
+        <KitList completeCount={lines.filter((l) => l.excluded || l.isPacked).length}>
+          <div className="space-y-3">
+            {categories.map(({ cat, lines: catLines }) => (
+              <CategorySection key={cat} id={`bag-${cat}`} title={CATEGORY_LABEL[cat]} done={catLines.filter((l) => l.excluded || l.isPacked).length} total={catLines.length} coverage={weightedCoverage(catLines, "bag")}>
+                {catLines.map((l) => {
+                  const v = byId.get(l.id)!;
+                  return <KitItemRow key={l.id} line={v} kind="bag" familyId={ctx.family.id} bagId={bag.id} canUpdate={hasRole(ctx.role, "member")} editSlot={canEdit ? <BagItemEditDialog bagId={bag.id} line={v} computedRequired={l.computedRequired} /> : undefined} />;
+                })}
+              </CategorySection>
+            ))}
+          </div>
+        </KitList>
       </div>
       {canEdit && (
         <div className="mt-6 no-print">

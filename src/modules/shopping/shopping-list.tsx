@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpDown, CircleCheck, ExternalLink, RotateCcw, ShoppingCart, Trash2 } from "lucide-react";
+import { ArrowUpDown, CircleCheck, ExternalLink, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/misc";
 import { formatDate, formatMoney, formatNumber } from "@/i18n/format";
-import { CATEGORY_LABEL, STORE_LABEL } from "@/i18n/messages";
+import { STORE_LABEL } from "@/i18n/messages";
 import { cn } from "@/lib/utils";
 import { newOpId, submitOp } from "@/modules/offline/outbox";
 import { deleteShoppingItem, setShoppingItemStatus } from "./actions";
@@ -72,20 +72,34 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
     });
   }
 
+  function markBought(l: ShoppingLine) {
+    try { navigator.vibrate?.(12); } catch { /* unsupported */ }
+    if (l.kit) kitOp(l, l.status === "to_buy" ? { quantityHave: l.kit.required, acquiredVia: "purchased" } : { quantityHave: 0, acquiredVia: null }, l.status === "to_buy" ? "Comprado." : "Reaberto.");
+    else if (l.source === "manual") start(async () => {
+      const r = await setShoppingItemStatus({ id: l.id.slice(7), purchased: l.status === "to_buy" });
+      if (r.ok) { toast.success(r.message ?? "Atualizado."); router.refresh(); } else toast.error(r.error);
+    });
+  }
+
+  const toBuy = visible.filter((l) => l.status === "to_buy");
+  const toBuyCents = toBuy.reduce((s, l) => s + (l.totalCents ?? 0), 0);
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2 no-print">
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtro">
-          {FILTERS.map((f) => (
-            <button key={f.key} role="tab" aria-selected={filter === f.key} onClick={() => setFilter(f.key)} className={cn("rounded-full px-3 py-1 text-sm", filter === f.key ? "bg-brand-700 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50")}>{f.label}</button>
-          ))}
+    <div className="min-w-0 space-y-3">
+      <div className="space-y-2 no-print">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Filtro">
+          <div className="flex w-max gap-1.5">
+            {FILTERS.map((f) => (
+              <button key={f.key} role="tab" aria-selected={filter === f.key} onClick={() => setFilter(f.key)} className={cn("h-9 rounded-full px-3.5 text-sm whitespace-nowrap", filter === f.key ? "bg-brand-700 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50")}>{f.label}</button>
+            ))}
+          </div>
         </div>
-        <div className="flex w-full gap-2 sm:ml-auto sm:w-auto">
-          <Select aria-label="Origem" value={source} onChange={(e) => setSource(e.target.value as typeof source)} className="h-9 min-w-0 flex-1 sm:w-40 sm:flex-none">
+        <div className="flex gap-2">
+          <Select aria-label="Origem" value={source} onChange={(e) => setSource(e.target.value as typeof source)} className="min-w-0 flex-1 sm:w-44 sm:flex-none">
             <option value="all">Todas as origens</option><option value="home">HOME KIT</option><option value="bag">GO BAGS</option><option value="manual">Manuais</option><option value="energy">Energia</option>
           </Select>
-          <label className="flex min-w-0 flex-1 items-center gap-1 text-sm text-slate-500 sm:flex-none"><ArrowUpDown className="size-4" aria-hidden /><span className="sr-only">Ordenar por</span>
-            <Select value={sort} onChange={(e) => setSort(e.target.value as keyof typeof SORTS)} className="h-9 min-w-0 flex-1 sm:w-36">{Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
+          <label className="flex min-w-0 flex-1 items-center gap-1 text-sm text-slate-500 sm:flex-none"><ArrowUpDown className="size-4 shrink-0" aria-hidden /><span className="sr-only">Ordenar por</span>
+            <Select value={sort} onChange={(e) => setSort(e.target.value as keyof typeof SORTS)} className="min-w-0 flex-1 sm:w-40">{Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           </label>
         </div>
       </div>
@@ -95,54 +109,59 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
       ) : (
         <Card>
           <ul className="divide-y divide-slate-100" aria-busy={pending}>
-            {visible.map((l) => (
-              <li key={l.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold text-slate-500 uppercase" aria-hidden>{(CATEGORY_LABEL[l.category] ?? "").slice(0, 3)}</div>
-                <div className="min-w-0 flex-1">
-                  <p className={cn("text-sm font-medium", l.status !== "to_buy" && "text-slate-500 line-through decoration-slate-300")}>{l.name}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                    <PriorityBadge priority={l.priority} />
-                    <Badge tone="outline">{l.sourceLabel}</Badge>
-                    <span>{CATEGORY_LABEL[l.category]}</span>
-                    <span className="tabular-nums">· {formatNumber(l.quantity)} {l.unit}</span>
-                    {l.status !== "to_buy" && <Badge tone="ready">{STATUS_LABEL[l.status]}{l.boughtBy ? ` · ${l.boughtBy}` : ""}</Badge>}
-                    {l.budget === "within_budget" && <Badge tone="ready">Dentro do orçamento</Badge>}
-                    {l.budget === "over_budget" && <Badge tone="warning">Fora do orçamento</Badge>}
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {l.store ? (STORE_LABEL[l.store] ?? l.store) : `Onde: ${storeHints[l.category] ?? "—"}`}
-                    {l.url && <a href={l.url} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-0.5 text-brand-600 hover:underline">Ver na loja <ExternalLink className="size-3" aria-hidden /></a>}
-                    {l.cheaper && <span className="ml-2 text-ready-700">Alternativa mais económica: {l.cheaper.name} (≈ {formatMoney(l.cheaper.unitCents)}/{l.unit})</span>}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
-                  <div className="text-right">
-                    <p className="text-sm font-semibold tabular-nums">{l.totalCents == null ? "Preço a verificar" : `${l.priceKind === "estimate" ? "≈ " : ""}${formatMoney(l.totalCents)}`}</p>
-                    {l.unitCents != null && <p className="text-xs text-slate-500">{formatMoney(l.unitCents)}/{l.unit} · {l.priceKind === "verified" ? `verificado ${formatDate(l.priceDate)}` : l.priceKind === "manual" ? "indicado por si" : "estimativa"}</p>}
-                  </div>
-                  {canUpdate && (
-                    <div className="flex gap-1 no-print">
-                      {l.kit && l.status === "to_buy" && (
-                        <>
-                          <Button size="sm" variant="secondary" disabled={pending} onClick={() => kitOp(l, { quantityHave: l.kit!.required, acquiredVia: "purchased" }, "Registado como comprado.")}><CircleCheck aria-hidden /> Comprei</Button>
-                          <Button size="sm" variant="ghost" disabled={pending} onClick={() => kitOp(l, { quantityHave: l.kit!.required, acquiredVia: "owned" }, "Registado como já existente.")}>Já tenho</Button>
-                        </>
-                      )}
-                      {l.kit && l.status !== "to_buy" && <Button size="sm" variant="ghost" disabled={pending} onClick={() => kitOp(l, { quantityHave: 0, acquiredVia: null }, "Reaberto.")}><RotateCcw aria-hidden /> Desfazer</Button>}
-                      {l.source === "manual" && (
-                        <>
-                          <ActionButton size="sm" variant={l.status === "to_buy" ? "secondary" : "ghost"} action={setShoppingItemStatus} input={{ id: l.id.slice(7), purchased: l.status === "to_buy" }}>{l.status === "to_buy" ? <><CircleCheck aria-hidden /> Comprei</> : <><RotateCcw aria-hidden /> Desfazer</>}</ActionButton>
-                          <ActionButton size="icon" variant="ghost" aria-label="Remover" action={deleteShoppingItem} input={{ id: l.id.slice(7) }} confirm="Remover da lista?"><Trash2 aria-hidden /></ActionButton>
-                        </>
-                      )}
-                      {l.source === "energy" && <Button asChild size="sm" variant="ghost"><Link href="/app/energy">Gerir</Link></Button>}
+            {visible.map((l) => {
+              const canToggle = canUpdate && (l.kit || l.source === "manual");
+              const done = l.status !== "to_buy";
+              return (
+                <li key={l.id} className="flex gap-3 px-3 py-3 sm:px-4">
+                  <button
+                    type="button"
+                    disabled={!canToggle || pending}
+                    onClick={() => markBought(l)}
+                    aria-label={done ? `${l.name}: reabrir` : `${l.name}: marcar como comprado`}
+                    aria-pressed={done}
+                    className="-m-1 flex size-11 shrink-0 items-center justify-center rounded-full disabled:cursor-default"
+                  >
+                    <span className={cn("flex size-7 items-center justify-center rounded-full border-2", done ? "border-ready-500 bg-ready-500 text-white" : "border-slate-300 bg-white")}>{done && <CircleCheck className="size-4" aria-hidden />}</span>
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className={cn("text-[15px] leading-snug font-medium sm:text-sm", done && "text-slate-500 line-through decoration-slate-300")}>{l.name}</p>
+                      <p className="shrink-0 text-right text-sm font-semibold tabular-nums">{l.totalCents == null ? <span className="text-xs font-normal text-slate-400">s/ preço</span> : `${l.priceKind === "estimate" ? "≈ " : ""}${formatMoney(l.totalCents)}`}</p>
                     </div>
-                  )}
-                </div>
-              </li>
-            ))}
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                      <PriorityBadge priority={l.priority} />
+                      <span className="tabular-nums">{formatNumber(l.quantity)} {l.unit}</span>
+                      <span>· {l.sourceLabel}</span>
+                      {done && <Badge tone="ready">{STATUS_LABEL[l.status]}{l.boughtBy ? ` · ${l.boughtBy}` : ""}</Badge>}
+                      {l.budget === "over_budget" && <Badge tone="warning">Fora do orçamento</Badge>}
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {l.store ? (STORE_LABEL[l.store] ?? l.store) : storeHints[l.category] ?? ""}
+                      {l.unitCents != null && <span> · {formatMoney(l.unitCents)}/{l.unit} {l.priceKind === "verified" ? `(verificado ${formatDate(l.priceDate)})` : l.priceKind === "manual" ? "" : "(estimativa)"}</span>}
+                      {l.url && <a href={l.url} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-brand-600">Loja <ExternalLink className="size-3" aria-hidden /></a>}
+                    </p>
+                    {l.cheaper && <p className="mt-0.5 text-xs text-ready-700">Mais económico: {l.cheaper.name} (≈ {formatMoney(l.cheaper.unitCents)}/{l.unit})</p>}
+                    {canUpdate && (
+                      <div className="mt-1.5 flex flex-wrap gap-1 no-print">
+                        {l.kit && !done && <Button size="sm" variant="ghost" className="px-2" disabled={pending} onClick={() => kitOp(l, { quantityHave: l.kit!.required, acquiredVia: "owned" }, "Registado como já existente.")}>Já tenho</Button>}
+                        {l.source === "manual" && <ActionButton size="sm" variant="ghost" className="px-2" action={deleteShoppingItem} input={{ id: l.id.slice(7) }} confirm="Remover da lista?"><Trash2 aria-hidden /> Remover</ActionButton>}
+                        {l.source === "energy" && <Button asChild size="sm" variant="ghost" className="px-2"><Link href="/app/energy">Gerir energia</Link></Button>}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </Card>
+      )}
+
+      {toBuy.length > 0 && (
+        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center justify-between rounded-xl bg-brand-900 px-4 py-3 text-sm text-white shadow-lg md:bottom-4 no-print" role="status">
+          <span>{toBuy.length} por comprar</span>
+          <span className="font-semibold tabular-nums">≈ {formatMoney(toBuyCents)}</span>
+        </div>
       )}
     </div>
   );

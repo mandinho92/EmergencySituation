@@ -27,7 +27,7 @@ export default async function FamilyPage() {
   return (
     <>
       <PageHeader icon={Users} title="A minha família" description="Partilhe o plano com quem vive consigo ou o ajuda numa emergência." />
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <FamilySharing
           accounts={(members ?? []).map((m) => ({ userId: m.user_id, name: m.profiles?.full_name ?? "—", role: m.role, joinedAt: m.joined_at }))}
           invitations={(invitations ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role, expiresAt: i.expires_at, createdAt: i.created_at }))}

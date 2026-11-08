@@ -34,7 +34,10 @@
 }
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+  /* Kit lists: "only missing" filter hides completed rows without a re-render. */
+  [data-only-missing="true"] [data-row-status="complete"],
+  [data-only-missing="true"] [data-row-status="excluded"] { display: none; }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
     font-feature-settings: "cv11", "ss01";

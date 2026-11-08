@@ -17,7 +17,8 @@
 - 64 unit tests (engine).
 - 18 integration tests through PostgREST with real user JWTs: isolation, role matrix, health data, member column guards, invitations (binding, expiry, revocation, forging, 14-day cap), last-admin guard, cascades, audit, reviews RPC, realtime delivery + RLS filtering.
 - E2E smoke: signup → email link → onboarding → dashboard → invitation → second user signs up and accepts → purchase visible to the other user via realtime → offline toggle queued and synced.
-- E2E crawl: 23 private pages as admin after real form flows (members, pet, contact, communication plan, meeting point, checklist, bags, task, inventory, shopping item, energy, review, export) and as a viewer (no purchase controls, no health data).
+- E2E crawl: every private page also at 390 px (fails on horizontal overflow), mobile kit interactions (one-tap done, debounced stepper persisted after reload, "só o que falta" filter) and SOS SMS/navigation links.
+- E2E crawl: 24 private pages as admin after real form flows (members, pet, contact, communication plan, meeting point, checklist, bags, task, inventory, shopping item, energy, review, export) and as a viewer (no purchase controls, no health data).
 
 ## Launch blockers
 

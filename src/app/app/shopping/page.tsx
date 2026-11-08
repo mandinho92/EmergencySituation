@@ -42,7 +42,7 @@ export default async function ShoppingPage() {
       )}
       <Notice className="mt-4">Os valores “≈” são estimativas de planeamento (dados de demonstração, não verificados) e não constituem ofertas. Confirme sempre o preço e a disponibilidade na loja.</Notice>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_18rem]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <ShoppingList lines={lines} familyId={ctx.family.id} canUpdate={hasRole(ctx.role, "member")} storeHints={STORE_HINT} />
         <Card className="h-fit">
           <CardHeader><CardTitle>Custo por categoria</CardTitle></CardHeader>

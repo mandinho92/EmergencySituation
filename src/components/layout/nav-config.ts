@@ -1,6 +1,6 @@
 import {
   Backpack, BatteryCharging, Boxes, CalendarCheck, History, House, LayoutDashboard, ListChecks, MapPin, MessagesSquare,
-  Package, Settings, ShoppingCart, Siren, UserRound, Users, Building2, type LucideIcon,
+  Package, Settings, ShoppingCart, Siren, UserRound, Users, Building2, LifeBuoy, type LucideIcon,
 } from "lucide-react";
 
 export interface NavItem {
@@ -10,7 +10,7 @@ export interface NavItem {
 }
 
 export const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
-  { label: "", items: [{ href: "/app", label: "Painel", icon: LayoutDashboard }] },
+  { label: "", items: [{ href: "/app/sos", label: "Emergência (SOS)", icon: LifeBuoy }, { href: "/app", label: "Painel", icon: LayoutDashboard }] },
   {
     label: "Preparação",
     items: [
@@ -44,15 +44,15 @@ export const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   },
 ];
 
+/** Mobile bottom bar: two items, the central SOS button, one item, then "Mais". */
 export const MOBILE_PRIMARY: NavItem[] = [
   { href: "/app", label: "Painel", icon: LayoutDashboard },
   { href: "/app/home-kit", label: "Kits", icon: House },
-  { href: "/app/scenarios", label: "Plano", icon: Siren },
   { href: "/app/shopping", label: "Compras", icon: ShoppingCart },
 ];
 
 /** Pages made available offline by "Disponibilizar offline". */
 export const OFFLINE_PAGES = [
-  "/app", "/app/home-kit", "/app/go-bags", "/app/meeting-points", "/app/communication", "/app/scenarios",
+  "/app/sos", "/app", "/app/home-kit", "/app/go-bags", "/app/meeting-points", "/app/communication", "/app/scenarios",
   "/app/inventory", "/app/members", "/app/print/plan", "/app/print/cards",
 ];

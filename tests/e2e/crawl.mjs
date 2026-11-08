@@ -48,12 +48,25 @@ async function visit(page, path, who, shotName, fullPage = true) {
   await page.locator('[aria-busy="true"][aria-label="A carregar"]').waitFor({ state: "detached", timeout: 15000 }).catch(() => failures.push(`${who} ${path}: still loading`));
   await page.locator("h1").first().waitFor({ timeout: 10000 }).catch(() => failures.push(`${who} ${path}: no heading`));
   const boundary = await page.getByText(/Algo correu mal|Application error/).count();
+  // Mobile: no page may scroll horizontally.
+  const overflow = await page.evaluate(() => (window.innerWidth < 500 ? document.documentElement.scrollWidth - window.innerWidth : 0));
+  if (overflow > 1) failures.push(`${who} ${path}: horizontal overflow of ${overflow}px`);
   if (status >= 400 || boundary > 0) failures.push(`${who} ${path}: status ${status}${boundary ? " (error boundary)" : ""}`);
   if (SHOTS && shotName) await page.screenshot({ path: `${SHOTS}/${shotName}.png`, fullPage });
 }
 
 async function toast(page, re) {
   await page.getByText(re).first().waitFor({ timeout: 10000 });
+}
+
+// The app rate-limits magic links per IP (20/h); all E2E traffic comes from one IP.
+// Reset the counters in the LOCAL database before running.
+{
+  const { default: pg } = await import("pg");
+  const db = new pg.Client({ connectionString: process.env.E2E_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
+  await db.connect();
+  await db.query("delete from private.rate_limits");
+  await db.end();
 }
 
 const browser = await chromium.launch();
@@ -147,7 +160,7 @@ try {
   const res = await a.request.get(`${BASE}/api/account/export`);
   if (res.status() !== 200 || !(await res.text()).includes("Família Costa")) failures.push("export failed");
 
-  const pages = ["/app", "/app/home-kit", "/app/go-bags", "/app/inventory", "/app/shopping", "/app/products", "/app/energy", "/app/scenarios", "/app/scenarios/wildfire",
+  const pages = ["/app", "/app/sos", "/app/home-kit", "/app/go-bags", "/app/inventory", "/app/shopping", "/app/products", "/app/energy", "/app/scenarios", "/app/scenarios/wildfire",
     "/app/meeting-points", "/app/communication", "/app/tasks", "/app/reviews", "/app/family", "/app/members", "/app/household", "/app/activity", "/app/settings",
     "/app/print/plan", "/app/print/cards", "/app/print/home-kit"];
   for (const p of pages) await visit(a, p, "admin", `admin${p.replaceAll("/", "_")}`);
@@ -158,7 +171,29 @@ try {
   // Mobile screenshots of key pages.
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await ctx.storageState() });
   const mp = await m.newPage();
-  for (const p of ["/app", "/app/home-kit", "/app/shopping", "/app/scenarios/earthquake"]) await visit(mp, p, "mobile", `mobile${p.replaceAll("/", "_")}`, false);
+  const shotsMobile = new Set(["/app", "/app/sos", "/app/home-kit", "/app/go-bags", "/app/shopping", "/app/scenarios/earthquake"]);
+  for (const p of [...pages, "/app/scenarios/earthquake", bagHref]) await visit(mp, p, "mobile", shotsMobile.has(p) ? `mobile${p.replaceAll("/", "_")}` : undefined, false);
+
+  // Mobile kit interactions: one-tap done, stepper, "only missing" filter.
+  await mp.goto(`${BASE}/app/home-kit`);
+  const can = mp.locator('[data-item-key="kitchen.can_opener"]');
+  await can.getByRole("button", { name: /marcar que já tem tudo/ }).click();
+  await can.locator('[data-status="complete"]').waitFor({ timeout: 10000 });
+  const rice = mp.locator('[data-item-key="food.rice"]');
+  await rice.getByRole("button", { name: /^Mais/ }).click();
+  await rice.getByRole("button", { name: /^Mais/ }).click();
+  await mp.waitForTimeout(1500);
+  await mp.reload();
+  const riceQty = await mp.locator('[data-item-key="food.rice"] input[type="number"]').inputValue();
+  if (Number(riceQty) !== 1) failures.push(`stepper: expected 1 kg of rice after two +0.5 taps, got ${riceQty}`);
+  await mp.getByText("Mostrar só o que falta").click();
+  if (await mp.locator('[data-item-key="kitchen.can_opener"]').isVisible()) failures.push("only-missing filter did not hide a completed item");
+  if (SHOTS) await mp.screenshot({ path: `${SHOTS}/mobile_kit_filtered.png` });
+  await mp.getByText("Mostrar só o que falta").click();
+  // SOS works with the family's data.
+  await mp.goto(`${BASE}/app/sos`);
+  await mp.getByRole("link", { name: /SMS para Tia Rosa/ }).waitFor();
+  await mp.getByRole("link", { name: /Navegar/ }).first().waitFor();
 
   // Viewer: invite, accept, crawl. Must never see health data or edit controls.
   await a.goto(`${BASE}/app/family`);

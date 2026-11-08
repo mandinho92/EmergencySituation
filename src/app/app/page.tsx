@@ -59,9 +59,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader><CardTitle>Preparação global</CardTitle></CardHeader>
-          <CardContent className="flex flex-col items-center gap-3 pb-6">
-            <ProgressRing value={scores.global} size={148} stroke={12} label="Preparação global" />
-            <p className="text-center text-sm text-slate-500">{scores.global >= 80 ? "Bem preparados. Mantenham as revisões em dia." : scores.global >= 40 ? "A caminho. Sigam as ações prioritárias." : "Comecem pelas ações prioritárias — os essenciais primeiro."}</p>
+          <CardContent className="flex items-center gap-4 pb-5 lg:flex-col lg:gap-3 lg:pb-6">
+            <span className="lg:hidden"><ProgressRing value={scores.global} size={96} stroke={9} label="Preparação global" /></span>
+            <span className="hidden lg:inline-flex"><ProgressRing value={scores.global} size={148} stroke={12} label="Preparação global" /></span>
+            <p className="text-sm text-slate-500 lg:text-center">{scores.global >= 80 ? "Bem preparados. Mantenham as revisões em dia." : scores.global >= 40 ? "A caminho. Sigam as ações prioritárias." : "Comecem pelas ações prioritárias — os essenciais primeiro."}</p>
           </CardContent>
         </Card>
 

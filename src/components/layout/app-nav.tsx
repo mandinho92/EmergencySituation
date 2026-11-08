@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, ShieldCheck } from "lucide-react";
+import { LifeBuoy, Menu, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -19,9 +19,12 @@ function NavLink({ item, pathname, onNavigate }: { item: NavItem; pathname: stri
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors", active ? "bg-brand-50 text-brand-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900")}
+      className={cn(
+        "flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors md:min-h-0",
+        item.href === "/app/sos" ? "bg-red-50 text-red-700 hover:bg-red-100" : active ? "bg-brand-50 text-brand-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+      )}
     >
-      <item.icon className={cn("size-4", active ? "text-brand-600" : "text-slate-400")} aria-hidden />
+      <item.icon className={cn("size-4", item.href === "/app/sos" ? "text-red-600" : active ? "text-brand-600" : "text-slate-400")} aria-hidden />
       {item.label}
     </Link>
   );
@@ -65,19 +68,27 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden no-print" aria-label="Navegação principal">
-      <div className="grid grid-cols-5">
-        {MOBILE_PRIMARY.map((i) => {
+      <div className="grid grid-cols-5 items-end">
+        {MOBILE_PRIMARY.map((i, idx) => {
           const active = isActive(pathname, i.href) || (i.href === "/app/home-kit" && pathname.startsWith("/app/go-bags"));
-          return (
-            <Link key={i.href} href={i.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium", active ? "text-brand-700" : "text-slate-500")}>
-              <i.icon className="size-5" aria-hidden />
+          const link = (
+            <Link key={i.href} href={i.href} aria-current={active ? "page" : undefined} className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium", active ? "text-brand-700" : "text-slate-500")}>
+              <i.icon className="size-6" aria-hidden />
               {i.label}
             </Link>
           );
+          // The SOS button sits in the centre, reachable with either thumb.
+          return idx === 2 ? [
+            <Link key="sos" href="/app/sos" aria-current={pathname === "/app/sos" ? "page" : undefined} aria-label="Emergência" className="flex flex-col items-center pb-1.5">
+              <span className="-mt-5 flex size-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-4 ring-white active:bg-red-700"><LifeBuoy className="size-7" aria-hidden /></span>
+              <span className="mt-0.5 text-[11px] font-semibold text-red-700">SOS</span>
+            </Link>,
+            link,
+          ] : link;
         })}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-slate-500">
-            <Menu className="size-5" aria-hidden /> Mais
+          <DialogTrigger className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-slate-500">
+            <Menu className="size-6" aria-hidden /> Mais
           </DialogTrigger>
           <DialogContent title="Menu">
             <NavGroups pathname={pathname} onNavigate={() => setOpen(false)} />

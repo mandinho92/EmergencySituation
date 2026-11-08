@@ -12,7 +12,10 @@ import { CATEGORY_LABEL, HOME_KIT_CATEGORIES } from "@/i18n/messages";
 import { hasRole, requireFamily } from "@/lib/session";
 import { AddCustomHomeItem, HomeItemEditDialog } from "@/modules/home-kit/item-forms";
 import { KitSettingsDialog } from "@/modules/home-kit/preferences-form";
+import { CategoryChips, CategorySection } from "@/modules/kits/category-section";
 import { KitItemRow } from "@/modules/kits/kit-item-row";
+import { KitList } from "@/modules/kits/kit-list";
+import { KitTabs } from "@/components/layout/kit-tabs";
 import { toViews } from "@/modules/kits/view";
 import { loadPreparedness } from "@/modules/preparedness/load";
 import { loadPriceIndex } from "@/modules/products/pricing";
@@ -30,12 +33,14 @@ export default async function HomeKitPage() {
   const w = data.plan.water;
   const waterMissing = Math.max(0, data.water.requiredLiters - data.water.haveLiters);
   const foodDays = data.foodAutonomyDays;
+  const categories = HOME_KIT_CATEGORIES.map((cat) => ({ cat, lines: data.homeLines.filter((l) => l.category === cat) })).filter((c) => c.lines.length > 0);
 
   const productsByKey = new Map<string, Array<{ id: string; name: string }>>();
   for (const p of prices.products) if (p.item_key) productsByKey.set(p.item_key, [...(productsByKey.get(p.item_key) ?? []), { id: p.id, name: p.name }]);
 
   return (
     <>
+      <KitTabs active="home" />
       <PageHeader
         icon={House}
         title="HOME KIT"
@@ -72,31 +77,23 @@ export default async function HomeKitPage() {
 
           <Notice className="mt-4">Quantidades de referência para planeamento. Medicação e alimentação infantil devem ser definidas com o médico, farmacêutico ou pediatra. Preços “≈” são estimativas de planeamento.</Notice>
 
-          <div className="mt-4 space-y-4">
-            {HOME_KIT_CATEGORIES.map((cat) => {
-              const lines = data.homeLines.filter((l) => l.category === cat);
-              if (lines.length === 0) return null;
-              const done = lines.filter((l) => l.excluded || l.missing <= 0).length;
-              return (
-                <Card key={cat} id={cat} className="scroll-mt-20">
-                  <CardHeader>
-                    <CardTitle>{CATEGORY_LABEL[cat]}</CardTitle>
-                    <span className="flex items-center gap-2 text-xs text-slate-500"><span className="tabular-nums">{done}/{lines.length}</span><ProgressBar value={weightedCoverage(lines) * 100} className="w-20" label={CATEGORY_LABEL[cat]} /></span>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="divide-y divide-slate-100">
-                      {lines.map((l) => {
-                        const v = viewById.get(l.id)!;
-                        return (
-                          <KitItemRow key={l.id} line={v} kind="home" familyId={ctx.family.id} canUpdate={canUpdate}
-                            editSlot={canEdit ? <HomeItemEditDialog line={v} computedRequired={l.computedRequired} products={l.productKey ? productsByKey.get(l.productKey) ?? [] : []} /> : undefined} />
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="mt-4">
+            <CategoryChips items={categories.map((c) => ({ id: c.cat, label: CATEGORY_LABEL[c.cat], missing: c.lines.filter((l) => !l.excluded && l.missing > 0).length }))} />
+            <KitList completeCount={data.homeLines.filter((l) => l.excluded || l.missing <= 0).length}>
+              <div className="space-y-3">
+                {categories.map(({ cat, lines }) => (
+                  <CategorySection key={cat} id={cat} title={CATEGORY_LABEL[cat]} done={lines.filter((l) => l.excluded || l.missing <= 0).length} total={lines.length} coverage={weightedCoverage(lines)}>
+                    {lines.map((l) => {
+                      const v = viewById.get(l.id)!;
+                      return (
+                        <KitItemRow key={l.id} line={v} kind="home" familyId={ctx.family.id} canUpdate={canUpdate}
+                          editSlot={canEdit ? <HomeItemEditDialog line={v} computedRequired={l.computedRequired} products={l.productKey ? productsByKey.get(l.productKey) ?? [] : []} /> : undefined} />
+                      );
+                    })}
+                  </CategorySection>
+                ))}
+              </div>
+            </KitList>
           </div>
         </>
       )}

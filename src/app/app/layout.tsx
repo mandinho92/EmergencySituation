@@ -7,6 +7,7 @@ import { requireFamily } from "@/lib/session";
 import { loadAlerts } from "@/modules/notifications/load";
 import { ConnectionStatus } from "@/modules/offline/connection-status";
 import { FamilyRealtime } from "@/modules/offline/family-realtime";
+import { InstallPrompt } from "@/modules/offline/install-prompt";
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
   const ctx = await requireFamily();
@@ -26,7 +27,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
             <UserMenu name={ctx.profile.full_name} families={ctx.families} activeFamilyId={ctx.family.id} />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 sm:px-6 md:pb-10">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-4 pb-32 sm:px-6 sm:pt-5 md:pb-10"><InstallPrompt />{children}</main>
       </div>
       <MobileNav />
       <FamilyRealtime familyId={ctx.family.id} />

@@ -54,6 +54,16 @@ async function signup(page, name, email, next) {
   await page.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
 }
 
+// The app rate-limits magic links per IP (20/h); all E2E traffic comes from one IP.
+// Reset the counters in the LOCAL database before running.
+{
+  const { default: pg } = await import("pg");
+  const db = new pg.Client({ connectionString: process.env.E2E_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
+  await db.connect();
+  await db.query("delete from private.rate_limits");
+  await db.end();
+}
+
 const browser = await chromium.launch();
 const errors = [];
 try {

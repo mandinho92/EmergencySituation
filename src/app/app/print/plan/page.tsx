@@ -24,7 +24,7 @@ export default async function PrintPlanPage() {
 
   return (
     <article className="mx-auto max-w-3xl space-y-6 bg-white p-6 text-sm print:p-0 [&_h2]:mb-2 [&_h2]:border-b [&_h2]:border-slate-200 [&_h2]:pb-1 [&_h2]:text-base [&_h2]:font-semibold">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Plano familiar de emergência</h1>
           <p className="text-slate-600">{ctx.family.name}{district ? ` · ${district}` : ""}{data.household.municipality ? `, ${data.household.municipality}` : ""} · gerado em {formatDate(new Date().toISOString())}</p>
@@ -34,12 +34,12 @@ export default async function PrintPlanPage() {
 
       <section>
         <h2>Em perigo imediato</h2>
-        <ul className="grid grid-cols-3 gap-2">{EMERGENCY_NUMBERS.map((n) => <li key={n.number}><strong className="text-lg">{n.number}</strong><br />{n.label}</li>)}</ul>
+        <ul className="grid gap-2 sm:grid-cols-3">{EMERGENCY_NUMBERS.map((n) => <li key={n.number}><strong className="text-lg">{n.number}</strong><br />{n.label}</li>)}</ul>
       </section>
 
       <section>
         <h2>Agregado</h2>
-        <ul className="grid grid-cols-2 gap-1">
+        <ul className="grid gap-1 sm:grid-cols-2">
           {data.memberRows.map((m) => <li key={m.id}>{m.display_name} — {MEMBER_CATEGORY_LABEL[m.category]}{m.age_years != null ? `, ${formatAge(m.age_years)}` : ""}{m.reduced_mobility ? " · mobilidade reduzida" : ""}</li>)}
           {data.petRows.map((p) => <li key={p.id}>{p.name} — {PET_SPECIES_LABEL[p.species as keyof typeof PET_SPECIES_LABEL]}{p.has_microchip ? " · microchip" : ""}</li>)}
         </ul>
@@ -64,7 +64,7 @@ export default async function PrintPlanPage() {
 
       <section>
         <h2>Comunicação</h2>
-        <dl className="grid grid-cols-[12rem_1fr] gap-x-3 gap-y-1">
+        <dl className="grid gap-x-3 gap-y-1 sm:grid-cols-[12rem_1fr] [&_dd]:mb-1 sm:[&_dd]:mb-0">
           <dt className="font-medium">Contacto fora da região</dt><dd>{contact(comm?.out_of_region_contact_id) ? `${contact(comm?.out_of_region_contact_id)!.name} ${contact(comm?.out_of_region_contact_id)!.phone ?? ""}` : "—"}</dd>
           <dt className="font-medium">Contacto principal</dt><dd>{contact(comm?.primary_contact_id) ? `${contact(comm?.primary_contact_id)!.name} ${contact(comm?.primary_contact_id)!.phone ?? ""}` : "—"}</dd>
           <dt className="font-medium">Contacto alternativo</dt><dd>{contact(comm?.secondary_contact_id) ? `${contact(comm?.secondary_contact_id)!.name} ${contact(comm?.secondary_contact_id)!.phone ?? ""}` : "—"}</dd>
@@ -79,7 +79,7 @@ export default async function PrintPlanPage() {
 
       <section>
         <h2>Contactos</h2>
-        <table className="w-full"><tbody>{(contacts ?? []).map((c) => <tr key={c.id} className="border-b border-slate-100"><td className="py-1 font-medium">{c.name}</td><td>{c.relationship}</td><td>{c.phone}</td><td>{c.phone_alt}</td><td>{c.email}</td></tr>)}</tbody></table>
+        <div className="overflow-x-auto"><table className="w-full min-w-[480px]"><tbody>{(contacts ?? []).map((c) => <tr key={c.id} className="border-b border-slate-100"><td className="py-1 font-medium">{c.name}</td><td>{c.relationship}</td><td>{c.phone}</td><td>{c.phone_alt}</td><td>{c.email}</td></tr>)}</tbody></table></div>
       </section>
 
       <section>

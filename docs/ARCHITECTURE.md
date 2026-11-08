@@ -121,7 +121,16 @@ Integrity: composite foreign keys `(family_id, id)` make cross-family references
 - Not available offline (stated in the UI): map tiles, invitations, email, anything not yet visited/downloaded.
 - Conflict policy: last write wins per field (operations are idempotent "set" operations).
 
-## 9. Deviations from the brief (and why)
+## 9. Mobile-first interaction rules
+
+- Bottom bar: Painel · Kits · **SOS** (centre, reachable with either thumb) · Compras · Mais. Desktop: sidebar with SOS first.
+- `/app/sos` (pre-cached for offline): call 112 / SNS 24 / CIAV, one-tap status SMS ("Estou bem" / "Preciso de ajuda") with optional GPS coordinates (GPS and SMS work without mobile data), tap-to-call contacts ranked by the communication plan, meeting points with `geo:` navigation, relevant scenarios.
+- Kit lists: a 44 px circle marks a line done (home: "já tenho"; bag: "na mochila"); −/+ steppers are debounced (several taps → one sync); "Mostrar só o que falta" persists per device and hides completed rows with CSS (no re-render); categories collapse when complete; sticky category chips with missing counts.
+- Shopping: one tap on the circle marks bought; sticky "N por comprar · ≈ total" bar above the bottom navigation.
+- Touch targets ≥ 44 px on phones, inputs at 16 px (prevents iOS zoom on focus), haptic tick on Android, install banner (native prompt on Android, instructions on iOS).
+- Regression guard: the E2E crawl fails if any private page scrolls horizontally at 390 px.
+
+## 10. Deviations from the brief (and why)
 
 | Brief | Implemented | Reason |
 |---|---|---|
