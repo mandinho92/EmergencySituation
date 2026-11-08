@@ -102,6 +102,7 @@ try {
   const ctxB = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const b = await ctxB.newPage();
   b.on("pageerror", (e) => errors.push(`B: ${e.message}`));
+  b.on("console", (m) => { if (/realtime/i.test(m.text())) console.log(`  [B console] ${m.text()}`); });
   const invitePath = new URL(inviteUrl).pathname;
   await b.goto(`${BASE}${invitePath}`);
   await b.getByText("convidou-o para a família Família Martins").waitFor();

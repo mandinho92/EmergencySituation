@@ -1,6 +1,9 @@
 "use client";
 
+import { Settings2 } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FormDialog } from "@/components/ui/dialog";
 import { ActionForm, FieldError, SubmitButton } from "@/components/ui/action-form";
 import { CheckboxField, Field, Input } from "@/components/ui/form";
 import { BUDGET_PRESETS } from "@/domain/budget/budget";
@@ -67,5 +70,14 @@ export function BudgetForm({ budgetCents, onDone }: { budgetCents: number | null
       <p className="text-xs text-slate-500">Os essenciais nunca são retirados da lista por falta de orçamento: ficam assinalados como “por adquirir”.</p>
       <SubmitButton>Guardar orçamento</SubmitButton>
     </ActionForm>
+  );
+}
+
+/** Client wrapper so server pages can open the settings form in a dialog. */
+export function KitSettingsDialog(props: { targetDays: number; waterOverride: number | null; includeHygiene: boolean; hotClimate: boolean }) {
+  return (
+    <FormDialog title="Objetivo do HOME KIT" trigger={<Button size="sm" variant="secondary"><Settings2 aria-hidden /> {props.targetDays === 1 ? "24 h" : `${props.targetDays} dias`}</Button>}>
+      {(close) => <KitSettingsForm {...props} onDone={close} />}
+    </FormDialog>
   );
 }
