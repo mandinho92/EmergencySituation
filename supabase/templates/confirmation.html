@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-PT">
+  <body style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; color: #0f172a; background: #f8fafc; padding: 24px;">
+    <table role="presentation" width="100%" style="max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px;">
+      <tr><td>
+        <h1 style="font-size: 20px; margin: 0 0 16px;">Confirme o seu email</h1>
+        <p style="font-size: 15px; line-height: 1.5;">Obrigado por criar a sua conta. Confirme o seu email para começar a preparar a sua família. O link é válido durante 1 hora e só pode ser usado uma vez.</p>
+        <p style="margin: 24px 0;">
+          <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="background: #1e3a5f; color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Confirmar email e entrar</a>
+        </p>
+        <p style="font-size: 13px; color: #64748b;">Se não criou esta conta, pode ignorar este email. Ninguém entra na sua conta sem este link.</p>
+      </td></tr>
+    </table>
+  </body>
+</html>
