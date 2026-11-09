@@ -7,6 +7,8 @@ import { z } from "zod";
 import type { ActionResult } from "@/lib/actions";
 import { publicEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
 import { NEXT_COOKIE } from "./constants";
@@ -66,12 +68,21 @@ export async function requestMagicLink(input: Record<string, unknown>): Promise<
     return { ok: false, error: "Foram pedidos demasiados links. Aguarde alguns minutos e tente novamente." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  // The email link must work on any device and browser (people often request on a computer and
+  // open the email on their phone or inside a mail app's built-in browser). The PKCE flow used by
+  // @supabase/ssr binds the link to the requesting browser, so the request is sent with the implicit
+  // flow: the session travels in the link's URL fragment and /auth/callback stores it.
+  // With custom email templates (token_hash links, see supabase/templates) /auth/confirm is used instead.
+  const mailer = createSupabaseClient<Database>(publicEnv.NEXT_PUBLIC_SUPABASE_URL, publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+    auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const redirect = new URL("/auth/callback", publicEnv.NEXT_PUBLIC_SITE_URL);
+  if (next) redirect.searchParams.set("next", next);
+  const { error } = await mailer.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: mode === "signup",
-      emailRedirectTo: `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+      emailRedirectTo: redirect.toString(),
       data: mode === "signup" ? { full_name: name } : undefined,
     },
   });

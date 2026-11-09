@@ -10,7 +10,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <>
       <h1 className="text-lg font-semibold">Entrar</h1>
-      <p className="mb-5 mt-1 text-sm text-slate-600">Enviamos um link e um código de acesso para o seu email.</p>
+      <p className="mb-5 mt-1 text-sm text-slate-600">Enviamos um link de acesso para o seu email. Sem palavra-passe.</p>
       {error === "link" && <Notice tone="danger" className="mb-4">O link é inválido ou expirou. Peça um novo.</Notice>}
       {signed_out && <Notice tone="success" className="mb-4">Sessão terminada.</Notice>}
       <MagicLinkForm mode="login" next={typeof next === "string" ? next : undefined} defaultEmail={typeof email === "string" ? email : undefined} />

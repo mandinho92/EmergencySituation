@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = { title: "Como funciona" };
 
 const SECTIONS = [
-  { title: "1. Registo em segundos", body: "Indique o nome e o email. Recebe um link (e um código de 6 dígitos) para entrar. Não há palavras-passe para esquecer." },
+  { title: "1. Registo em segundos", body: "Indique o nome e o email. Recebe um link por email para entrar. Não há palavras-passe para esquecer." },
   { title: "2. A sua família, como ela é", body: "Uma pessoa, um casal, uma família com bebés, idosos, pessoas com mobilidade reduzida ou animais. Pode adicionar e remover membros a qualquer momento, e completar a configuração mais tarde." },
   { title: "3. Habitação e localização aproximada", body: "Tipo de casa, gás, lareira, gerador, poço e o distrito. A morada exata é opcional. A localização serve para destacar riscos regionais — que pode confirmar ou alterar." },
   { title: "4. Cálculo das necessidades", body: "O motor de cálculo estima água (beber, cozinhar, higiene e reserva), alimentação por idade, higiene, primeiros socorros e energia, para o horizonte que escolher: de 24 horas a 14 dias ou personalizado. As referências são para planeamento e estão explicadas em cada artigo." },

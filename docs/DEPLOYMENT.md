@@ -7,7 +7,7 @@
 | App | https://familyready.vercel.app (Vercel team `family-ready`, project `familyready`) |
 | Supabase | project `vuvftdnoebkrzljydpzz`, eu-central-1, Postgres 17 — migrations applied via `scripts/supabase-remote.mjs` |
 | Protection | Standard: production domain public, previews and deployment URLs require Vercel login |
-| Email | Supabase built-in sender (free tier): only sends to the Supabase organisation's members, low hourly limit, default templates (link works in the same browser only; no 6-digit code). Configure custom SMTP to lift all three limits and apply `supabase/templates/*`. |
+| Email | Supabase built-in sender (free tier): low hourly limit and default templates (link only, no 6-digit code). Links are sent with the implicit flow and land on `/auth/callback`, so they work on any device/browser. With custom SMTP, apply `supabase/templates/*` (token_hash links + code) and set `NEXT_PUBLIC_AUTH_EMAIL_CODE=true`. |
 | Git | Deployed with the Vercel CLI; the GitHub repository is not connected yet (pushes do not auto-deploy). |
 
 Verified with `tests/e2e/prod-smoke.mjs` (temporary admin-created accounts, deleted afterwards).

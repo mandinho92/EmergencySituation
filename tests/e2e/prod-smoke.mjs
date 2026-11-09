@@ -30,11 +30,14 @@ async function login(page, name, email) {
   const user = await r.json();
   if (!r.ok) throw new Error(`create user: ${JSON.stringify(user)}`);
   created.push(user.id);
-  r = await admin("/generate_link", { method: "POST", body: JSON.stringify({ type: "magiclink", email }) });
+  // Same link format as Supabase's default email (verify → /auth/callback#access_token=…),
+  // opened in a fresh browser context: this is the "requested on one device, opened on another" case.
+  r = await admin("/generate_link", { method: "POST", body: JSON.stringify({ type: "magiclink", email, redirect_to: `${BASE}/auth/callback` }) });
   const link = await r.json();
   if (!r.ok) throw new Error(`generate_link: ${JSON.stringify(link)}`);
-  const hashed = link.hashed_token ?? link.properties?.hashed_token;
-  await page.goto(`${BASE}/auth/confirm?token_hash=${hashed}&type=magiclink`);
+  await page.goto(link.action_link ?? link.properties?.action_link);
+  // /auth/callback stores the session client-side, then navigates away.
+  await page.waitForURL((u) => !u.pathname.startsWith("/auth/"), { timeout: 20000 });
 }
 
 const step = (s) => console.log(`• ${s}`);
@@ -87,6 +90,15 @@ try {
   await ctxB.setOffline(false);
   await b.evaluate(() => window.dispatchEvent(new Event("online")));
   await b.getByText(/sincronizada/).waitFor({ timeout: 20000 });
+
+  step("a used link shows a clear message");
+  {
+    const ctxC = await browser.newContext();
+    const c = await ctxC.newPage();
+    await c.goto(`${BASE}/auth/callback#error=access_denied&error_code=otp_expired`);
+    await c.getByText("Este link já foi usado ou expirou").waitFor();
+    await ctxC.close();
+  }
 
   step("SOS screen loads on mobile");
   await a.goto(`${BASE}/app/sos`);

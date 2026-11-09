@@ -8,6 +8,7 @@
 | A member edits plan definitions | Role ladder in policies + column guard triggers for `member`. |
 | Invitation link forwarded/leaked | Token = 256-bit random, stored as SHA-256 only; bound to the invited email (`invitation_email_mismatch`); expires ≤14 days (default 7); single use; revocable; preview reveals only family name, inviter first name and a masked email. |
 | Forged invitation acceptance | Clients cannot set `accepted_at`/`token_hash` (trigger); acceptance only via `accept_invitation()`. |
+| Magic link opened on another device | Default-template links use the implicit flow: tokens travel in the URL fragment (never sent to a server), are stored by `/auth/callback` and removed from the address bar immediately. PKCE (`/auth/confirm?code=`) is kept for same-browser links; `token_hash` links (custom templates) are preferred once custom SMTP exists because they also resist mail-scanner pre-fetching when combined with a confirm step. |
 | Account enumeration on login | Same response whether or not the email exists. |
 | Magic-link abuse | App-level fixed-window limits (5/h per email, 20/h per IP, `consume_rate_limit`, service role only) + Supabase Auth limits. Invitation creation limited to 20/h per family in the database. |
 | CSRF on `/api/sync` | Same-origin check + JSON content type required; Server Actions have built-in origin checks. |

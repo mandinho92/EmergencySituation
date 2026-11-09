@@ -13,7 +13,7 @@ export default function RecoverPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>Verifique a pasta de spam ou promoções.</li>
           <li>Cada link só funciona uma vez e expira em 1 hora — use sempre o mais recente.</li>
-          <li>Se instalou a aplicação no telemóvel, use o código de 6 dígitos do email.</li>
+          <li>O link funciona em qualquer dispositivo, mesmo que o tenha pedido noutro.</li>
           <li>Se perdeu o acesso ao email, peça ao administrador da família para o convidar com um novo email.</li>
         </ul>
       </div>

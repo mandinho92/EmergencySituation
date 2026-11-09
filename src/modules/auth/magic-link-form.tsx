@@ -8,6 +8,13 @@ import { Field, Input } from "@/components/ui/form";
 import { clearPrivateCache } from "@/modules/offline/sw-registration";
 import { requestMagicLink, verifyEmailCode } from "./actions";
 
+/**
+ * The 6-digit code is only in the email when the project uses the custom templates in
+ * supabase/templates (requires custom SMTP on Supabase's free tier). Enable it with
+ * NEXT_PUBLIC_AUTH_EMAIL_CODE=true once those templates are active.
+ */
+const EMAIL_HAS_CODE = process.env.NEXT_PUBLIC_AUTH_EMAIL_CODE === "true";
+
 export function MagicLinkForm({ mode, next, defaultEmail }: { mode: "signup" | "login"; next?: string; defaultEmail?: string }) {
   const [sentTo, setSentTo] = useState<string | null>(null);
 
@@ -23,16 +30,20 @@ export function MagicLinkForm({ mode, next, defaultEmail }: { mode: "signup" | "
           <div className="rounded-full bg-ready-50 p-3 text-ready-700"><Mail className="size-6" aria-hidden /></div>
           <h1 className="mt-3 text-lg font-semibold">Verifique o seu email</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Se existir uma conta para <strong>{sentTo}</strong>, enviámos um link de acesso válido durante 1 hora. Abra-o neste dispositivo ou introduza o código.
+            {mode === "signup" ? "Enviámos um email para" : "Se existir uma conta para"} <strong>{sentTo}</strong>{mode === "signup" ? "." : ", enviámos um email."} Abra o email e <strong>toque no botão/link</strong> para entrar — funciona em qualquer dispositivo.
           </p>
+          <ul className="mt-3 space-y-1 text-left text-xs text-slate-500">
+            <li>• O link é válido durante 1 hora e só funciona uma vez — use o email mais recente.</li>
+            <li>• Não chegou? Veja a pasta de spam ou promoções e aguarde 1–2 minutos.</li>
+          </ul>
         </div>
-        <ActionForm action={verifyEmailCode} extra={{ email: sentTo }} successMessage={null} className="space-y-3">
+        {EMAIL_HAS_CODE && <ActionForm action={verifyEmailCode} extra={{ email: sentTo }} successMessage={null} className="space-y-3">
           <Field label="Código de 6 dígitos" htmlFor="code">
             <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required placeholder="000000" className="text-center text-lg tracking-[0.4em]" />
           </Field>
           <FieldError name="code" />
           <SubmitButton className="w-full" pendingLabel="A verificar…">Entrar com o código</SubmitButton>
-        </ActionForm>
+        </ActionForm>}
         <button type="button" onClick={() => setSentTo(null)} className="w-full text-center text-sm text-brand-600 hover:underline">Usar outro email ou reenviar</button>
       </div>
     );
