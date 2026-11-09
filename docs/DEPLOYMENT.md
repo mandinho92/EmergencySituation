@@ -1,5 +1,19 @@
 # Deployment (Vercel + Supabase)
 
+## Current production
+
+| | |
+|---|---|
+| App | https://familyready.vercel.app (Vercel team `family-ready`, project `familyready`) |
+| Supabase | project `vuvftdnoebkrzljydpzz`, eu-central-1, Postgres 17 — migrations applied via `scripts/supabase-remote.mjs` |
+| Protection | Standard: production domain public, previews and deployment URLs require Vercel login |
+| Email | Supabase built-in sender (free tier): only sends to the Supabase organisation's members, low hourly limit, default templates (link works in the same browser only; no 6-digit code). Configure custom SMTP to lift all three limits and apply `supabase/templates/*`. |
+| Git | Deployed with the Vercel CLI; the GitHub repository is not connected yet (pushes do not auto-deploy). |
+
+Verified with `tests/e2e/prod-smoke.mjs` (temporary admin-created accounts, deleted afterwards).
+
+Redeploy from a checkout: `npx vercel deploy --prod --scope family-ready` (needs a Vercel token).
+
 ## 1. Supabase project
 
 1. Create a project (EU region recommended for RGPD, e.g. Frankfurt/`eu-central-1`).
