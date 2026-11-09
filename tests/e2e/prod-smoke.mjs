@@ -98,6 +98,13 @@ try {
   process.exitCode = 1;
 } finally {
   await browser.close();
-  for (const id of created) await admin(`/users/${id}`, { method: "DELETE" });
-  console.log(`cleanup: deleted ${created.length} test user(s)`);
+  // Reverse order: the family's last admin can only be removed once the other accounts are gone.
+  let deleted = 0;
+  for (const id of [...created].reverse()) {
+    const r = await admin(`/users/${id}`, { method: "DELETE" });
+    if (r.ok) deleted++;
+    else console.error(`cleanup failed for ${id}: ${r.status} ${await r.text()}`);
+  }
+  console.log(`cleanup: deleted ${deleted}/${created.length} test user(s)`);
+  if (deleted !== created.length) process.exitCode = 1;
 }
