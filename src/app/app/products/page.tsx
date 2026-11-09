@@ -8,6 +8,7 @@ import { formatDate, formatMoney } from "@/i18n/format";
 import { CATEGORY_LABEL, STORE_LABEL } from "@/i18n/messages";
 import { requireFamily } from "@/lib/session";
 import { cn } from "@/lib/utils";
+import { PriceTag } from "@/modules/products/price-tag";
 import { bestPrice, loadCatalogue } from "@/modules/products/pricing";
 
 export const metadata: Metadata = { title: "Produtos" };
@@ -25,7 +26,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/app/pro
     <>
       <PageHeader icon={Package} title="Produtos" description="Catálogo de referência usado para estimar custos e comparar equipamentos." />
       <Notice tone="warning" title="Dados de demonstração" className="mb-4">
-        Este catálogo inicial não tem integrações com lojas. Referências genéricas mostram estimativas de planeamento; produtos de marca mostram especificações confirmadas em listagens públicas na data indicada e não têm preço até existir um preço verificado. Confirme sempre na loja ou no fabricante antes de comprar.
+        Este catálogo inicial não tem integrações com lojas. Referências genéricas mostram estimativas de planeamento; produtos de marca mostram especificações confirmadas em listagens públicas e um preço de referência observado numa loja (fonte e data indicadas) — não é uma oferta e pode ter mudado. Confirme sempre na loja ou no fabricante antes de comprar.
       </Notice>
       <div className="mb-4 flex flex-wrap gap-1.5">
         <Link href="/app/products" className={cn("rounded-full px-3 py-1 text-sm", !cat ? "bg-brand-700 text-white" : "bg-white ring-1 ring-slate-200")}>Todos</Link>
@@ -38,7 +39,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/app/pro
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
-                <thead className="text-left text-xs text-slate-500"><tr><th className="py-2 font-medium">Produto</th><th className="font-medium">Capacidade</th><th className="font-medium">Saída AC</th><th className="font-medium">Pico</th><th className="font-medium">Entrada solar</th><th className="font-medium">Química</th><th className="font-medium">Peso</th><th className="font-medium">Expansível</th><th className="font-medium">Preço</th></tr></thead>
+                <thead className="text-left text-xs text-slate-500"><tr><th className="py-2 font-medium">Produto</th><th className="font-medium">Capacidade</th><th className="font-medium">Saída AC</th><th className="font-medium">Pico</th><th className="font-medium">Carrega com painel solar</th><th className="font-medium">Química</th><th className="font-medium">Peso</th><th className="font-medium">Expansível</th><th className="font-medium">Preço</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {brand.map((p) => {
                     const s = p.product_energy_specs;
@@ -49,11 +50,11 @@ export default async function ProductsPage({ searchParams }: PageProps<"/app/pro
                         <td className="tabular-nums">{s?.capacity_wh ? `${s.capacity_wh} Wh` : "—"}</td>
                         <td className="tabular-nums">{s?.ac_output_w ? `${s.ac_output_w} W` : "—"}</td>
                         <td className="tabular-nums">{s?.surge_w ? `${s.surge_w} W` : "—"}</td>
-                        <td className="tabular-nums">{s?.solar_input_max_w ? `${s.solar_input_max_w} W` : <span className="text-slate-400">a confirmar</span>}</td>
+                        <td>{s?.solar_input_max_w ? `Sim, até ${s.solar_input_max_w} W` : s?.kind === "power_station" ? <span className="text-slate-400">Sim · potência a confirmar</span> : "—"}</td>
                         <td>{s?.chemistry ?? "—"}</td>
                         <td className="tabular-nums">{s?.weight_kg ? `${s.weight_kg} kg` : "—"}</td>
                         <td>{s?.expandable == null ? "—" : s.expandable ? "Sim" : "Não"}</td>
-                        <td>{price ? formatMoney(price.unitCents) : <span className="text-slate-400">a verificar</span>}</td>
+                        <td className="min-w-48 py-2.5"><PriceTag price={price} /></td>
                       </tr>
                     );
                   })}

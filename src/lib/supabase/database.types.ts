@@ -563,14 +563,14 @@ isOneToOne: false
                   ]
                 },"product_catalog": {
                   Row: {
-                    "brand": string | null,"category": string,"created_at": string,"data_status": string,"description": string | null,"estimate_date": string | null,"estimated_price_cents": number | null,"id": string,"image_url": string | null,"is_active": boolean,"item_key": string | null,"model": string | null,"name": string,"slug": string,"specs_checked_on": string | null,"specs_source_url": string | null,"unit_label": string | null,"updated_at": string
+                    "brand": string | null,"category": string,"created_at": string,"data_status": string,"description": string | null,"estimate_date": string | null,"estimated_price_cents": number | null,"id": string,"image_url": string | null,"is_active": boolean,"item_key": string | null,"model": string | null,"name": string,"price_reference_label": string | null,"price_reference_url": string | null,"slug": string,"specs_checked_on": string | null,"specs_source_url": string | null,"unit_label": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "brand"?: string | null,"category": string,"created_at"?: string,"data_status"?: string,"description"?: string | null,"estimate_date"?: string | null,"estimated_price_cents"?: number | null,"id"?: string,"image_url"?: string | null,"is_active"?: boolean,"item_key"?: string | null,"model"?: string | null,"name": string,"slug": string,"specs_checked_on"?: string | null,"specs_source_url"?: string | null,"unit_label"?: string | null,"updated_at"?: string
+                    "brand"?: string | null,"category": string,"created_at"?: string,"data_status"?: string,"description"?: string | null,"estimate_date"?: string | null,"estimated_price_cents"?: number | null,"id"?: string,"image_url"?: string | null,"is_active"?: boolean,"item_key"?: string | null,"model"?: string | null,"name": string,"price_reference_label"?: string | null,"price_reference_url"?: string | null,"slug": string,"specs_checked_on"?: string | null,"specs_source_url"?: string | null,"unit_label"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "brand"?: string | null,"category"?: string,"created_at"?: string,"data_status"?: string,"description"?: string | null,"estimate_date"?: string | null,"estimated_price_cents"?: number | null,"id"?: string,"image_url"?: string | null,"is_active"?: boolean,"item_key"?: string | null,"model"?: string | null,"name"?: string,"slug"?: string,"specs_checked_on"?: string | null,"specs_source_url"?: string | null,"unit_label"?: string | null,"updated_at"?: string
+                    "brand"?: string | null,"category"?: string,"created_at"?: string,"data_status"?: string,"description"?: string | null,"estimate_date"?: string | null,"estimated_price_cents"?: number | null,"id"?: string,"image_url"?: string | null,"is_active"?: boolean,"item_key"?: string | null,"model"?: string | null,"name"?: string,"price_reference_label"?: string | null,"price_reference_url"?: string | null,"slug"?: string,"specs_checked_on"?: string | null,"specs_source_url"?: string | null,"unit_label"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     

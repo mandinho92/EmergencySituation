@@ -7,8 +7,13 @@ export interface PriceInfo {
   productId: string;
   productName: string;
   unitCents: number;
-  /** "verified" = a dated store price exists; "estimate" = planning estimate only. */
-  kind: "verified" | "estimate";
+  /**
+   * "verified" = dated store price in product_prices;
+   * "reference" = price observed in a public listing (source + date shown, not an offer);
+   * "estimate" = generic planning estimate.
+   */
+  kind: "verified" | "reference" | "estimate";
+  sourceLabel: string | null;
   store: string | null;
   url: string | null;
   date: string | null;
@@ -28,6 +33,8 @@ export interface CatalogueProduct {
   specs_checked_on: string | null;
   estimated_price_cents: number | null;
   estimate_date: string | null;
+  price_reference_label: string | null;
+  price_reference_url: string | null;
   unit_label: string | null;
   product_prices: Array<{ store: string; price_cents: number; url: string | null; checked_at: string }>;
   product_energy_specs: {
@@ -49,7 +56,7 @@ export const loadCatalogue = cache(async (): Promise<CatalogueProduct[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("product_catalog")
-    .select("id, slug, item_key, category, name, brand, model, description, data_status, specs_source_url, specs_checked_on, estimated_price_cents, estimate_date, unit_label, product_prices(store, price_cents, url, checked_at), product_energy_specs(*)")
+    .select("id, slug, item_key, category, name, brand, model, description, data_status, specs_source_url, specs_checked_on, estimated_price_cents, estimate_date, price_reference_label, price_reference_url, unit_label, product_prices(store, price_cents, url, checked_at), product_energy_specs(*)")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(`loadCatalogue: ${error.message}`);
@@ -59,8 +66,11 @@ export const loadCatalogue = cache(async (): Promise<CatalogueProduct[]> => {
 /** Best price for a product: the cheapest verified store price, else the planning estimate. */
 export function bestPrice(p: CatalogueProduct): PriceInfo | null {
   const verified = [...p.product_prices].sort((a, b) => a.price_cents - b.price_cents)[0];
-  if (verified) return { productId: p.id, productName: p.name, unitCents: verified.price_cents, kind: "verified", store: verified.store, url: verified.url, date: verified.checked_at };
-  if (p.estimated_price_cents != null) return { productId: p.id, productName: p.name, unitCents: p.estimated_price_cents, kind: "estimate", store: null, url: null, date: p.estimate_date };
+  if (verified) return { productId: p.id, productName: p.name, unitCents: verified.price_cents, kind: "verified", sourceLabel: null, store: verified.store, url: verified.url, date: verified.checked_at };
+  if (p.estimated_price_cents != null && p.price_reference_label) {
+    return { productId: p.id, productName: p.name, unitCents: p.estimated_price_cents, kind: "reference", sourceLabel: p.price_reference_label, store: null, url: p.price_reference_url, date: p.estimate_date };
+  }
+  if (p.estimated_price_cents != null) return { productId: p.id, productName: p.name, unitCents: p.estimated_price_cents, kind: "estimate", sourceLabel: null, store: null, url: null, date: p.estimate_date };
   return null;
 }
 

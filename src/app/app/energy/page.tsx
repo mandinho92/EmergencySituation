@@ -4,31 +4,32 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Notice, PageHeader, Stat } from "@/components/ui/misc";
 import { computeEnergyNeeds, pickStations, planSolar, recommendTier, TIER_BANDS, type StationEvaluation } from "@/domain/energy/energy";
-import { formatMoney, formatNumber } from "@/i18n/format";
+import { formatNumber } from "@/i18n/format";
 import { ENERGY_TIER_LABEL } from "@/i18n/messages";
 import { hasRole, requireFamily } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { DeviceDialog, DevicePresets, EnergySettingsForm, SelectionForm } from "@/modules/energy/forms";
 import { TierPicker } from "@/modules/energy/tier-picker";
-import { bestPrice, loadCatalogue } from "@/modules/products/pricing";
+import { PriceTag } from "@/modules/products/price-tag";
+import { bestPrice, loadCatalogue, type PriceInfo } from "@/modules/products/pricing";
 
 export const metadata: Metadata = { title: "Calculadora de energia" };
 
 const TIER_TEXT = { none: "Sem necessidade de bateria", powerbanks: "Apenas powerbanks", economic: "Económico", balanced: "Equilibrado", advanced: "Avançado", beyond_portable: "Acima de soluções portáteis" } as const;
 
-function StationCard({ title, e, highlight }: { title: string; e: StationEvaluation | null; highlight?: boolean }) {
+function StationCard({ title, e, highlight, price }: { title: string; e: StationEvaluation | null; highlight?: boolean; price: PriceInfo | null }) {
   return (
     <div className={highlight ? "rounded-xl border-2 border-brand-500 bg-brand-50/40 p-4" : "rounded-xl border border-slate-200 p-4"}>
       <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{title}</p>
       {e ? (
         <>
           <p className="mt-1 font-semibold">{e.station.name}</p>
+          <div className="mt-1"><PriceTag price={price} /></div>
           <dl className="mt-2 grid grid-cols-2 gap-1 text-xs text-slate-600">
             <dt>Capacidade</dt><dd className="text-right tabular-nums">{e.station.capacityWh} Wh</dd>
             <dt>Saída AC contínua</dt><dd className="text-right tabular-nums">{e.station.acOutputW} W</dd>
-            <dt>Entrada solar máx.</dt><dd className="text-right tabular-nums">{e.station.solarInputMaxW ? `${e.station.solarInputMaxW} W` : "a confirmar"}</dd>
+            <dt>Carrega com painel solar</dt><dd className="text-right tabular-nums">{e.station.solarInputMaxW ? `Sim, até ${e.station.solarInputMaxW} W` : "Sim · máx. a confirmar"}</dd>
             <dt>Autonomia estimada</dt><dd className="text-right font-medium tabular-nums">{Number.isFinite(e.autonomyDays) ? `${formatNumber(e.autonomyDays)} dia(s)` : "—"}</dd>
-            <dt>Preço</dt><dd className="text-right">{e.station.priceCents != null ? formatMoney(e.station.priceCents) : "a verificar"}</dd>
           </dl>
           {!e.meetsCapacity && <p className="mt-2 text-xs text-amber-700">Abaixo da capacidade recomendada: menos autonomia.</p>}
           {!e.meetsPower && <p className="mt-2 text-xs text-red-600">Potência insuficiente para os equipamentos AC indicados.</p>}
@@ -56,6 +57,7 @@ export default async function EnergyPage() {
   const stations = catalogue.filter((c) => c.product_energy_specs?.kind === "power_station").map((c) => ({
     id: c.id, name: c.name, capacityWh: Number(c.product_energy_specs!.capacity_wh), acOutputW: c.product_energy_specs!.ac_output_w!, surgeW: c.product_energy_specs!.surge_w, solarInputMaxW: c.product_energy_specs!.solar_input_max_w, priceCents: bestPrice(c)?.unitCents ?? null,
   }));
+  const priceById = new Map(catalogue.map((c) => [c.id, bestPrice(c)]));
   const panels = catalogue.filter((c) => c.product_energy_specs?.kind === "solar_panel").map((c) => ({ id: c.id, name: c.name, panelW: c.product_energy_specs!.panel_w!, priceCents: bestPrice(c)?.unitCents ?? null }));
   const picks = list.length > 0 ? pickStations(stations, needs) : { recommended: null, economic: null, larger: null };
   const chosenStation = stations.find((s) => s.id === p.selected_station_product_id) ?? picks.recommended?.station ?? null;
@@ -114,19 +116,26 @@ export default async function EnergyPage() {
 
       {list.length > 0 && (
         <Card className="mt-4">
-          <CardHeader><div><CardTitle>Power stations</CardTitle><CardDescription>A recomendada é a opção que cobre a necessidade com menor custo conhecido — nunca uma maior do que o necessário. Sem preços verificados, a capacidade é usada como indicador de custo.</CardDescription></div></CardHeader>
+          <CardHeader><div><CardTitle>Power stations</CardTitle><CardDescription>A recomendada é a mais barata que cobre a necessidade (pelos preços de referência indicados) — nunca uma maior do que o necessário. Os preços são de referência, com fonte e data: confirme na loja.</CardDescription></div></CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
-            <StationCard title="Alternativa económica" e={picks.economic} />
-            <StationCard title="Recomendada" e={picks.recommended} highlight />
-            <StationCard title="Maior capacidade" e={picks.larger} />
+            <StationCard title="Alternativa económica" e={picks.economic} price={picks.economic ? priceById.get(picks.economic.station.id) ?? null : null} />
+            <StationCard title="Recomendada" e={picks.recommended} highlight price={picks.recommended ? priceById.get(picks.recommended.station.id) ?? null : null} />
+            <StationCard title="Maior capacidade" e={picks.larger} price={picks.larger ? priceById.get(picks.larger.station.id) ?? null : null} />
           </CardContent>
         </Card>
       )}
 
       {solar && (
         <Card className="mt-4">
-          <CardHeader><div><CardTitle className="flex items-center gap-2"><Sun className="size-4 text-amber-500" aria-hidden />Recarga solar</CardTitle><CardDescription>Com {solar.panelCount} × {chosenPanel!.name}{chosenStation ? ` ligado(s) a ${chosenStation.name}` : ""}.</CardDescription></div></CardHeader>
+          <CardHeader><div><CardTitle className="flex items-center gap-2"><Sun className="size-4 text-amber-500" aria-hidden />Recarga solar: o painel carrega a bateria?</CardTitle><CardDescription>Com {solar.panelCount} × {chosenPanel!.name}{chosenStation ? ` ligado(s) a ${chosenStation.name}` : ""}.</CardDescription></div></CardHeader>
           <CardContent className="space-y-3">
+            {chosenStation && (
+              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
+                <strong>Sim.</strong> {chosenStation.solarInputMaxW ? `A ${chosenStation.name} aceita até ${chosenStation.solarInputMaxW} W de painéis` : `A ${chosenStation.name} aceita painéis solares (potência máxima a confirmar com o fabricante)`}
+                {solar.fullRechargeDays != null ? `; com esta configuração enche de vazia a cheia em cerca de ${formatNumber(solar.fullRechargeDays)} dia(s) de sol (${settings.peakSunHours} h de sol pleno por dia).` : "."}
+                {" "}Condição: o painel tem de ser compatível (conector, tensão e potência) — o mais seguro é um painel da mesma marca ou indicado pelo fabricante.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="Potência dos painéis" value={`${solar.arrayW} W`} hint={solar.limitedByStationInput ? `Limitado a ${solar.usableArrayW} W pela entrada da power station` : undefined} />
               <Stat label="Produção estimada" value={`${solar.dailyHarvestWh} Wh/dia`} />

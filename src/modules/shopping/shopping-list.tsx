@@ -127,7 +127,7 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className={cn("text-[15px] leading-snug font-medium sm:text-sm", done && "text-slate-500 line-through decoration-slate-300")}>{l.name}</p>
-                      <p className="shrink-0 text-right text-sm font-semibold tabular-nums">{l.totalCents == null ? <span className="text-xs font-normal text-slate-400">s/ preço</span> : `${l.priceKind === "estimate" ? "≈ " : ""}${formatMoney(l.totalCents)}`}</p>
+                      <p className="shrink-0 text-right text-sm font-semibold tabular-nums">{l.totalCents == null ? <span className="text-xs font-normal text-slate-400">s/ preço</span> : `${l.priceKind === "estimate" || l.priceKind === "reference" ? "≈ " : ""}${formatMoney(l.totalCents)}`}</p>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                       <PriorityBadge priority={l.priority} />
@@ -138,7 +138,7 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
                       {l.store ? (STORE_LABEL[l.store] ?? l.store) : storeHints[l.category] ?? ""}
-                      {l.unitCents != null && <span> · {formatMoney(l.unitCents)}/{l.unit} {l.priceKind === "verified" ? `(verificado ${formatDate(l.priceDate)})` : l.priceKind === "manual" ? "" : "(estimativa)"}</span>}
+                      {l.unitCents != null && <span> · {formatMoney(l.unitCents)}/{l.unit} {l.priceKind === "verified" ? `(verificado ${formatDate(l.priceDate)})` : l.priceKind === "manual" ? "" : l.priceKind === "reference" ? "(preço de referência)" : "(estimativa)"}</span>}
                       {l.url && <a href={l.url} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-brand-600">Loja <ExternalLink className="size-3" aria-hidden /></a>}
                     </p>
                     {l.cheaper && <p className="mt-0.5 text-xs text-ready-700">Mais económico: {l.cheaper.name} (≈ {formatMoney(l.cheaper.unitCents)}/{l.unit})</p>}

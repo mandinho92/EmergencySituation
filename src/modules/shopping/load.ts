@@ -19,7 +19,7 @@ export interface ShoppingLine {
   status: "to_buy" | "purchased" | "owned";
   unitCents: number | null;
   totalCents: number | null;
-  priceKind: "verified" | "estimate" | "manual" | null;
+  priceKind: "verified" | "reference" | "estimate" | "manual" | null;
   priceDate: string | null;
   store: string | null;
   url: string | null;
