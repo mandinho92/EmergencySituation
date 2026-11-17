@@ -13,7 +13,7 @@ export interface OutboxOp {
   bagId?: string;
   key?: string;
   rowId?: string;
-  patch: { quantityHave?: number; acquiredVia?: "purchased" | "owned" | null; isPacked?: boolean };
+  patch: { quantityHave?: number; acquiredVia?: "purchased" | "owned" | null; isPacked?: boolean; expiresOn?: string | null };
   queuedAt?: string;
 }
 

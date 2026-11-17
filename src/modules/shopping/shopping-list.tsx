@@ -15,6 +15,7 @@ import { formatDate, formatMoney, formatNumber } from "@/i18n/format";
 import { STORE_LABEL } from "@/i18n/messages";
 import { cn } from "@/lib/utils";
 import { newOpId, submitOp } from "@/modules/offline/outbox";
+import { EXPIRY_CATEGORIES, ExpiryChip, ExpiryEditor } from "@/modules/kits/expiry";
 import { deleteShoppingItem, setShoppingItemStatus } from "./actions";
 import type { ShoppingLine } from "./load";
 
@@ -36,10 +37,12 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("to_buy");
   const [sort, setSort] = useState<keyof typeof SORTS>("priority");
   const [source, setSource] = useState<"all" | "home" | "bag" | "manual" | "energy">("all");
+  const [expiry, setExpiry] = useState<{ id: string; mode: "prompt" | "edit" } | null>(null);
   const [pending, start] = useTransition();
 
   const visible = useMemo(() => {
     let out = lines.filter((l) => {
+      if (expiry?.id === l.id) return true; // keep the row while its expiry question is open
       if (source !== "all" && l.source !== source) return false;
       switch (filter) {
         case "to_buy": return l.status === "to_buy";
@@ -59,9 +62,9 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
     };
     out = [...out].sort(by[sort]);
     return out;
-  }, [lines, filter, sort, source]);
+  }, [lines, filter, sort, source, expiry]);
 
-  function kitOp(l: ShoppingLine, patch: { quantityHave: number; acquiredVia: "purchased" | "owned" | null }, msg: string) {
+  function kitOp(l: ShoppingLine, patch: { quantityHave?: number; acquiredVia?: "purchased" | "owned" | null; expiresOn?: string | null }, msg: string) {
     if (!l.kit) return;
     const k = l.kit;
     start(async () => {
@@ -74,7 +77,11 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
 
   function markBought(l: ShoppingLine) {
     try { navigator.vibrate?.(12); } catch { /* unsupported */ }
-    if (l.kit) kitOp(l, l.status === "to_buy" ? { quantityHave: l.kit.required, acquiredVia: "purchased" } : { quantityHave: 0, acquiredVia: null }, l.status === "to_buy" ? "Comprado." : "Reaberto.");
+    if (l.kit) {
+      kitOp(l, l.status === "to_buy" ? { quantityHave: l.kit.required, acquiredVia: "purchased" } : { quantityHave: 0, acquiredVia: null }, l.status === "to_buy" ? "Comprado." : "Reaberto.");
+      // Optional: record the expiry date right away for items that usually expire.
+      if (l.status === "to_buy" && EXPIRY_CATEGORIES.has(l.category) && !l.expiresOn) setExpiry({ id: l.id, mode: "prompt" });
+    }
     else if (l.source === "manual") start(async () => {
       const r = await setShoppingItemStatus({ id: l.id.slice(7), purchased: l.status === "to_buy" });
       if (r.ok) { toast.success(r.message ?? "Atualizado."); router.refresh(); } else toast.error(r.error);
@@ -141,10 +148,15 @@ export function ShoppingList({ lines, familyId, canUpdate, storeHints }: { lines
                       {l.unitCents != null && <span> · {formatMoney(l.unitCents)}/{l.unit} {l.priceKind === "verified" ? `(verificado ${formatDate(l.priceDate)})` : l.priceKind === "manual" ? "" : l.priceKind === "reference" ? "(preço de referência)" : "(estimativa)"}</span>}
                       {l.url && <a href={l.url} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-brand-600">Loja <ExternalLink className="size-3" aria-hidden /></a>}
                     </p>
+                    {l.kit && expiry?.id === l.id && (
+                      <ExpiryEditor itemName={l.name} value={l.expiresOn} prompt={expiry.mode === "prompt"} onClose={() => setExpiry(null)}
+                        onSave={(v) => { setExpiry(null); kitOp(l, { expiresOn: v }, v ? "Validade guardada." : "Validade removida."); }} />
+                    )}
                     {l.cheaper && <p className="mt-0.5 text-xs text-ready-700">Mais económico: {l.cheaper.name} (≈ {formatMoney(l.cheaper.unitCents)}/{l.unit})</p>}
                     {canUpdate && (
                       <div className="mt-1.5 flex flex-wrap gap-1 no-print">
                         {l.kit && !done && <Button size="sm" variant="ghost" className="px-2" disabled={pending} onClick={() => kitOp(l, { quantityHave: l.kit!.required, acquiredVia: "owned" }, "Registado como já existente.")}>Já tenho</Button>}
+                        {l.kit && done && expiry?.id !== l.id && <ExpiryChip value={l.expiresOn} onClick={() => setExpiry({ id: l.id, mode: "edit" })} />}
                         {l.source === "manual" && <ActionButton size="sm" variant="ghost" className="px-2" action={deleteShoppingItem} input={{ id: l.id.slice(7) }} confirm="Remover da lista?"><Trash2 aria-hidden /> Remover</ActionButton>}
                         {l.source === "energy" && <Button asChild size="sm" variant="ghost" className="px-2"><Link href="/app/energy">Gerir energia</Link></Button>}
                       </div>

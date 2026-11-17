@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { formatDate, formatNumber } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 import { newOpId, submitOp, type OutboxOp } from "@/modules/offline/outbox";
+import { EXPIRY_CATEGORIES, ExpiryChip, ExpiryEditor } from "./expiry";
 
 export interface KitLineView {
   id: string;
   key: string | null;
   rowId: string | null;
   name: string;
+  category: string;
   unit: string;
   required: number;
   have: number;
@@ -72,17 +74,19 @@ export function KitItemRow({
   editSlot?: React.ReactNode;
 }) {
   const router = useRouter();
-  const [local, setLocal] = useState({ have: line.have, isPacked: line.isPacked, acquiredVia: line.acquiredVia });
+  const [local, setLocal] = useState({ have: line.have, isPacked: line.isPacked, acquiredVia: line.acquiredVia, expiresOn: line.expiresOn });
+  // "prompt": optional question right after a purchase; "edit": opened from the chip.
+  const [expiryMode, setExpiryMode] = useState<"prompt" | "edit" | null>(null);
   const [pending, start] = useTransition();
   const [queued, setQueued] = useState(false);
   const qtyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset local optimistic state whenever the server values change (realtime refresh).
-  const serverKey = `${line.have}|${line.isPacked}|${line.acquiredVia}`;
+  const serverKey = `${line.have}|${line.isPacked}|${line.acquiredVia}|${line.expiresOn}`;
   const [syncedKey, setSyncedKey] = useState(serverKey);
   if (syncedKey !== serverKey) {
     setSyncedKey(serverKey);
-    setLocal({ have: line.have, isPacked: line.isPacked, acquiredVia: line.acquiredVia });
+    setLocal({ have: line.have, isPacked: line.isPacked, acquiredVia: line.acquiredVia, expiresOn: line.expiresOn });
   }
 
   const missing = line.excluded ? 0 : Math.max(0, Math.round((line.required - local.have) * 100) / 100);
@@ -111,6 +115,17 @@ export function KitItemRow({
     haptic();
     setLocal({ ...local, ...optimistic });
     send(patch, message, previous);
+    // Just acquired something that usually expires: offer to record the date (optional).
+    const acquired = (patch.acquiredVia === "purchased" || patch.acquiredVia === "owned") || (patch.isPacked === true && previous.have < line.required);
+    if (acquired && EXPIRY_CATEGORIES.has(line.category) && !local.expiresOn) setExpiryMode("prompt");
+    if (patch.quantityHave === 0) setExpiryMode(null);
+  }
+
+  function saveExpiry(value: string | null) {
+    const previous = local;
+    setLocal({ ...local, expiresOn: value });
+    setExpiryMode(null);
+    send({ expiresOn: value }, value ? "Validade guardada." : "Validade removida.", previous);
   }
 
   function toggleDone() {
@@ -172,7 +187,7 @@ export function KitItemRow({
             <span className="tabular-nums">{formatNumber(local.have)} / {formatNumber(line.required)} {line.unit}</span>
             {!complete && missing > 0 && <span className="font-medium text-amber-700">faltam {formatNumber(missing)}</span>}
             {line.estimatedCostCents != null && missing > 0 && <span title="Estimativa de planeamento">≈ {(line.estimatedCostCents / 100).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}</span>}
-            {line.expiresOn && <span>val. {formatDate(line.expiresOn)}</span>}
+            {!canUpdate && local.expiresOn && <span>val. {formatDate(local.expiresOn)}</span>}
             {line.storageLocation && <span>· {line.storageLocation}</span>}
             {local.acquiredVia && line.purchasedByName && <span>· {local.acquiredVia === "purchased" ? "comprado" : "registado"} por {line.purchasedByName}</span>}
             {queued && <span className="font-medium text-brand-700">· por sincronizar</span>}
@@ -209,11 +224,15 @@ export function KitItemRow({
                   <CircleCheck aria-hidden /> Comprei
                 </Button>
               )}
+              {local.have > 0 && expiryMode === null && <ExpiryChip value={local.expiresOn} onClick={() => setExpiryMode("edit")} />}
               {missing > 0 && (
                 // On phones the large circle already means "já tenho"; the extra button only shows on wider screens.
                 <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={() => apply({ have: line.required, acquiredVia: "owned" }, { quantityHave: line.required, acquiredVia: "owned" }, "Registado como já existente.")}>{line.purchasable ? "Já tenho" : "Feito"}</Button>
               )}
             </div>
+          )}
+          {canUpdate && expiryMode && (
+            <ExpiryEditor itemName={line.name} value={local.expiresOn} prompt={expiryMode === "prompt"} onSave={saveExpiry} onClose={() => setExpiryMode(null)} />
           )}
         </div>
       </div>

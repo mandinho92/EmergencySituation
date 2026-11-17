@@ -24,6 +24,7 @@ export interface ShoppingLine {
   store: string | null;
   url: string | null;
   boughtBy: string | null;
+  expiresOn: string | null;
   budget: BudgetStatus | null;
   cheaper: { name: string; unitCents: number } | null;
   /** Reference for item-state operations on kit lines. */
@@ -82,6 +83,7 @@ export async function loadShopping(familyId: string, budgetCents: number | null)
       store: price?.store ?? null,
       url: price?.url ?? null,
       boughtBy: l.purchasedBy ? names.get(l.purchasedBy) ?? null : null,
+      expiresOn: l.expiresOn,
       budget: null,
       cheaper: status === "to_buy" ? cheaperFor(l, price?.unitCents ?? null) : null,
       kit: { kind: source, bagId, key: l.rowId ? undefined : l.key ?? undefined, rowId: l.rowId ?? undefined, required: l.required },
@@ -99,7 +101,7 @@ export async function loadShopping(familyId: string, budgetCents: number | null)
       id: `manual:${m.id}`, source: "manual", sourceLabel: "Adicionado manualmente", name: m.name, category: m.category, priority: m.priority as Priority,
       quantity: Number(m.quantity), unit: m.unit, status: m.status === "purchased" ? "purchased" : "to_buy",
       unitCents: price, totalCents: price == null ? null : Math.round(price * Number(m.quantity)), priceKind: price == null ? null : "manual", priceDate: null,
-      store: m.store, url: m.url, boughtBy: m.purchased_by ? names.get(m.purchased_by) ?? null : null, budget: null, cheaper: null, kit: null,
+      store: m.store, url: m.url, boughtBy: m.purchased_by ? names.get(m.purchased_by) ?? null : null, expiresOn: null, budget: null, cheaper: null, kit: null,
     });
   }
 
@@ -114,7 +116,7 @@ export async function loadShopping(familyId: string, budgetCents: number | null)
       lines.push({
         id: `energy:${pid}`, source: "energy", sourceLabel: "Energia (opcional)", name: p.name, category: "energy", priority: 3, quantity: qty, unit: "un",
         status: acquired ? "purchased" : "to_buy", unitCents: price?.unitCents ?? null, totalCents: price ? price.unitCents * qty : null, priceKind: price?.kind ?? null,
-        priceDate: price?.date ?? null, store: price?.store ?? null, url: price?.url ?? null, boughtBy: null, budget: null, cheaper: null, kit: null,
+        priceDate: price?.date ?? null, store: price?.store ?? null, url: price?.url ?? null, boughtBy: null, expiresOn: null, budget: null, cheaper: null, kit: null,
       });
     }
   }

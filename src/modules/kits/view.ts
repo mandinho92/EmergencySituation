@@ -20,6 +20,7 @@ export async function toViews(lines: KitLine[], familyId: string): Promise<KitLi
       key: l.key,
       rowId: l.rowId,
       name: l.name,
+      category: l.category,
       unit: l.unit,
       required: l.required,
       have: l.have,

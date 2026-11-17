@@ -190,6 +190,27 @@ try {
   if (await mp.locator('[data-item-key="kitchen.can_opener"]').isVisible()) failures.push("only-missing filter did not hide a completed item");
   if (SHOTS) await mp.screenshot({ path: `${SHOTS}/mobile_kit_filtered.png` });
   await mp.getByText("Mostrar só o que falta").click();
+  // Expiry: optional prompt right after a purchase, stored and surfaced as an "expiring" alert.
+  const pasta = mp.locator('[data-item-key="food.pasta"]');
+  await pasta.getByRole("button", { name: /Comprei/ }).click();
+  await pasta.getByText("Tem validade? (opcional)").waitFor();
+  const in10 = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
+  if (SHOTS) await pasta.screenshot({ path: `${SHOTS}/mobile_expiry_prompt.png` });
+  await pasta.locator('input[type="date"]').fill(in10);
+  await pasta.getByRole("button", { name: "Guardar" }).click();
+  await mp.getByText("Validade guardada.").first().waitFor();
+  await mp.waitForTimeout(800);
+  await mp.reload();
+  await mp.locator('[data-item-key="food.pasta"]').getByRole("button", { name: /^Validade .* — alterar$/ }).waitFor();
+  await mp.goto(`${BASE}/app/inventory?filter=expiring`);
+  if (!(await mp.getByText("Massa").count())) failures.push("expiry: pasta not listed as expiring in inventory");
+  // Shopping list: same optional question after marking bought.
+  await mp.goto(`${BASE}/app/shopping`);
+  await mp.getByRole("button", { name: /^Cereais, tostas ou bolachas: marcar como comprado$/ }).click();
+  await mp.getByText("Tem validade? (opcional)").waitFor();
+  await mp.getByRole("button", { name: "Agora não" }).click();
+  if (SHOTS) await mp.screenshot({ path: `${SHOTS}/mobile_shopping_after_buy.png` });
+
   // SOS works with the family's data.
   await mp.goto(`${BASE}/app/sos`);
   await mp.getByRole("link", { name: /SMS para Tia Rosa/ }).waitFor();
